@@ -41,4 +41,4 @@ RUN chmod +x /app/entrypoint.sh
 # Port internal untuk mt5linux bridge
 EXPOSE 18812
 
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]
