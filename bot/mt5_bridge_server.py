@@ -71,20 +71,13 @@ def connect_mt5_in_background():
 
     # 2. Verify account info and login status
     acc_info = mt5.account_info()
-    if not acc_info and login_acc > 0 and password:
-        log.info(f"MT5 initialized, attempting login for account #{login_acc} on server '{server_name}'...")
-        for login_attempt in range(1, 8):
-            login_ok = mt5.login(login_acc, password=password, server=server_name)
-            acc_info = mt5.account_info()
-            if login_ok and acc_info:
-                break
-            log.warning(f"Login attempt #{login_attempt} result: {login_ok}, last_error: {mt5.last_error()}. Retrying in 3s...")
-            time.sleep(3)
-
     if acc_info:
         log.info(f"SUCCESSFULLY LOGGED IN! Account Name: {getattr(acc_info, 'name', 'N/A')}, Balance: {getattr(acc_info, 'balance', 'N/A')}, Server: {getattr(acc_info, 'server', 'N/A')}")
     else:
-        log.warning("MT5 initialized, but account login is not completed yet.")
+        log.warning(f"MT5 initialized, but account_info() is None. Attempting manual mt5.login({login_acc})...")
+        if login_acc > 0 and password:
+            login_ok = mt5.login(login_acc, password=password, server=server_name)
+            log.info(f"Manual login result: {login_ok}, last_error: {mt5.last_error()}")
 
     # 3. Check & Force-enable Algo Trading in MT5 GUI if disabled
     t_info = mt5.terminal_info()
