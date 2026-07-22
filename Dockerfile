@@ -10,17 +10,17 @@ ENV WINEDLLOVERRIDES="mscoree,mshtml="
 RUN dpkg --add-architecture i386 && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
-        wget \
-        curl \
-        unzip \
-        xdotool \
-        ca-certificates \
-        xvfb \
-        python3 \
-        python3-pip \
-        netcat-openbsd \
-        procps \
-        gnupg2 && \
+    wget \
+    curl \
+    unzip \
+    xdotool \
+    ca-certificates \
+    xvfb \
+    python3 \
+    python3-pip \
+    netcat-openbsd \
+    procps \
+    gnupg2 && \
     mkdir -pm755 /etc/apt/keyrings && \
     wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key && \
     wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources && \
