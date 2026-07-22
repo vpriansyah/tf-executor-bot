@@ -1,0 +1,157 @@
+#!/bin/bash
+set -e
+
+export DISPLAY=:99
+export WINEPREFIX=/root/.wine
+export WINEDEBUG=-all
+export WINEDLLOVERRIDES="mscoree,mshtml="
+
+echo "=================================================="
+echo "   STARTING TF EXECUTOR BOT DOCKER CONTAINER      "
+echo "=================================================="
+
+# 1. Start Xvfb Virtual Display
+echo "[1/4] Starting Xvfb Virtual Display (DISPLAY=:99)..."
+if [ -f /tmp/.X99-lock ]; then
+    rm -f /tmp/.X99-lock
+fi
+Xvfb :99 -screen 0 1024x768x16 &
+sleep 2
+
+# Configure Wine GDI Rendering for headless Xvfb
+wine reg add "HKCU\Software\Wine\Direct3D" /v "renderer" /t REG_SZ /d "gdi" /f >/dev/null 2>&1 || true
+wine reg add "HKCU\Software\Wine\Direct3D" /v "OffscreenRenderingMode" /t REG_SZ /d "backbuffer" /f >/dev/null 2>&1 || true
+wine reg add "HKCU\Software\MetaQuotes\Terminal" /v "Path" /t REG_SZ /d "C:\Program Files\MetaTrader 5" /f >/dev/null 2>&1 || true
+
+# 2. Setup Portable Python 3.11 Windows di Wine C:\Python311 jika belum ada
+PY_WIN="$WINEPREFIX/drive_c/Python311/python.exe"
+if [ ! -f "$PY_WIN" ]; then
+    echo "[SETUP] Installing Portable Python 3.11 Windows in Wine (C:\Python311)..."
+    mkdir -p "$WINEPREFIX/drive_c/Python311"
+    cd /tmp
+    wget -q https://www.python.org/ftp/python/3.11.0/python-3.11.0-embed-amd64.zip -O python-embed.zip
+    python3 -m zipfile -e python-embed.zip "$WINEPREFIX/drive_c/Python311"
+    rm -f python-embed.zip
+
+    # Enable site-packages in embedded python
+    sed -i 's/#import site/import site/' "$WINEPREFIX/drive_c/Python311/python311._pth"
+
+    # Install pip inside Wine Python
+    echo "[SETUP] Installing pip in Wine Python..."
+    wget -q https://bootstrap.pypa.io/get-pip.py -O /tmp/get-pip.py
+    wine "$PY_WIN" /tmp/get-pip.py --no-warn-script-location || true
+    rm -f /tmp/get-pip.py
+
+    # Install MetaTrader5, mt5linux, and rpyc packages
+    echo "[SETUP] Installing MetaTrader5, mt5linux & rpyc in Wine Python..."
+    wine "$PY_WIN" -m pip install --no-cache-dir MetaTrader5 mt5linux rpyc || true
+    cd /app
+fi
+
+# 3. Copy custom broker config & full profile jika ada
+if [ -d "/app/mt5_profile" ]; then
+    echo "[PROFILE] Syncing full MT5 profile (bases, config, servers)..."
+    TARGET_PROFILE="$WINEPREFIX/drive_c/users/root/AppData/Roaming/MetaQuotes/Terminal/D0E8209F77C8CF37AD8BF550E51FF075"
+    mkdir -p "$TARGET_PROFILE"
+    cp -rf /app/mt5_profile/* "$TARGET_PROFILE/"
+fi
+
+if [ -d "/app/config" ]; then
+    echo "[CONFIG] Copying custom MT5 config files (servers.dat, accounts.dat, etc)..."
+    mkdir -p "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/Config"
+    cp -rf /app/config/* "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/Config/"
+
+    # Copy juga ke AppData Hash dir MT5 jika ada
+    APPDATA_MQ="$WINEPREFIX/drive_c/users/root/AppData/Roaming/MetaQuotes/Terminal"
+    if [ -d "$APPDATA_MQ" ]; then
+        for hash_dir in "$APPDATA_MQ"/*; do
+            if [ -d "$hash_dir" ] && [ "$(basename "$hash_dir")" != "Common" ] && [ "$(basename "$hash_dir")" != "Community" ]; then
+                mkdir -p "$hash_dir/config"
+                cp -rf /app/config/* "$hash_dir/config/"
+            fi
+        done
+    fi
+fi
+
+# 4. Preparing & Launching MT5 Terminal startup config
+MT5_EXE="$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe"
+MT5_CONFIG_DIR="$WINEPREFIX/drive_c/Program Files/MetaTrader 5/Config"
+mkdir -p "$MT5_CONFIG_DIR"
+
+# Write common.ini to force-enable Algo Trading and DLL imports in MT5
+cat <<EOF > "$MT5_CONFIG_DIR/common.ini"
+[Common]
+Login=$MT5_LOGIN
+Password=$MT5_PASSWORD
+Server=$MT5_SERVER
+EnableNews=0
+ExpertsEnable=1
+ExpertsDll=1
+ExpertsExp=1
+EOF
+
+# Copy common.ini into AppData hash config dirs
+APPDATA_MQ="$WINEPREFIX/drive_c/users/root/AppData/Roaming/MetaQuotes/Terminal"
+if [ -d "$APPDATA_MQ" ]; then
+    for hash_dir in "$APPDATA_MQ"/*; do
+        if [ -d "$hash_dir" ] && [ "$(basename "$hash_dir")" != "Common" ] && [ "$(basename "$hash_dir")" != "Community" ]; then
+            mkdir -p "$hash_dir/config"
+            cp -f "$MT5_CONFIG_DIR/common.ini" "$hash_dir/config/common.ini"
+        fi
+    done
+fi
+
+echo "[2/4] Checking MetaTrader 5 Terminal in Wine..."
+if [ -f "$MT5_EXE" ]; then
+    echo "[OK] Found MT5 Terminal at $MT5_EXE. Bridge server will initialize MT5 directly..."
+else
+
+
+    echo "[INFO] MT5 Terminal belum ada. Mengunduh & install..."
+    mkdir -p /tmp/mt5-install
+    cd /tmp/mt5-install
+    wget -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe
+    wine mt5setup.exe /auto &
+
+    # Otomatis menekan tombol Next & Finish pada installer GUI di DISPLAY :99
+    (
+        for i in {1..30}; do
+            sleep 3
+            if [ -f "$MT5_EXE" ]; then
+                echo "[OK] MetaTrader 5 Terminal berhasil ter-install!"
+                wine "$MT5_EXE" &
+                break
+            fi
+            DISPLAY=:99 xdotool key Return 2>/dev/null || true
+        done
+    ) &
+    cd /app
+fi
+
+# 5. Start mt5linux server bridge di Wine
+echo "[3/4] Starting mt5linux bridge server di Wine..."
+DISPLAY=:99 wine "$PY_WIN" -u /app/bot/mt5_bridge_server.py &
+BRIDGE_PID=$!
+
+
+# Menunggu mt5linux bridge siap di port 18812
+echo "Menunggu mt5linux bridge server di localhost:18812..."
+BRIDGE_READY=0
+for i in {1..45}; do
+    if nc -z localhost 18812 2>/dev/null; then
+        echo "[OK] mt5linux bridge server SIAP di localhost:18812!"
+        BRIDGE_READY=1
+        break
+    fi
+    sleep 1
+done
+
+if [ $BRIDGE_READY -eq 0 ]; then
+    echo "⚠️ WARNING: mt5linux bridge belum siap di port 18812 setelah 45 detik."
+    echo "   Melanjutkan ke Telegram Bot, bot akan terus mencoba rekonek secara otomatis."
+fi
+
+# 6. Start Telegram Bot Python Native
+echo "[4/4] Starting Telegram MT5 Executor Bot..."
+exec python3 bot/telegram_mt5_executor.py
+
