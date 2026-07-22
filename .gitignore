@@ -1,5 +1,21 @@
+# Environment variables
 .env
+
+# Python & Virtual Environments
 __pycache__/
 *.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+ENV/
+
+# System & Logs
 *.log
 .wine/
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
