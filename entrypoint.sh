@@ -133,6 +133,12 @@ echo "[3/4] Starting mt5linux bridge server di Wine..."
 DISPLAY=:99 wine "$PY_WIN" -u /app/bot/mt5_bridge_server.py &
 BRIDGE_PID=$!
 
+# Trigger automatic Finex broker search via xdotool in background
+if [ -f "/app/search_broker.sh" ]; then
+    echo "[BROKER] Running automatic Finex broker server search in background..."
+    (sleep 5 && bash /app/search_broker.sh) &
+fi
+
 
 # Menunggu mt5linux bridge siap di port 18812
 echo "Menunggu mt5linux bridge server di localhost:18812..."
