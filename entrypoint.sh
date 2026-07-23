@@ -170,14 +170,14 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
     fi
 
     if [ -s "$SETUP_BIN" ]; then
-        echo "[SETUP] Menjalankan Wine setup $SETUP_BIN (/auto /path:\"C:\\Program Files\\MetaTrader 5\")..."
-        DISPLAY=:99 wine "$SETUP_BIN" /auto /path:"C:\Program Files\MetaTrader 5" &
+        echo "[SETUP] Menjalankan Wine setup $SETUP_BIN secara silent (/auto /path:C:\\MetaTrader5)..."
+        DISPLAY=:99 wine "$SETUP_BIN" /auto /path:C:\MetaTrader5 &
         
-        # Menunggu jendela wizard MetaTrader muncul di screen virtual DISPLAY=:99 (maksimal 30 detik)
-        echo "[SETUP] Menunggu jendela installer MetaTrader muncul di screen..."
+        # Menunggu jendela wizard MetaTrader jika muncul di screen virtual DISPLAY=:99
+        echo "[SETUP] Menunggu inisialisasi installer MetaTrader..."
         WID=""
         WAIT_WIN=0
-        while [ $WAIT_WIN -lt 15 ]; do
+        while [ $WAIT_WIN -lt 10 ]; do
             WAIT_WIN=$((WAIT_WIN + 1))
             sleep 2
             WID=$(DISPLAY=:99 xdotool search --name "MetaTrader" 2>/dev/null | head -n 1 || true)
@@ -186,12 +186,10 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
             fi
 
             if [ -n "$WID" ]; then
-                echo "[SETUP] Jendela MetaTrader terdeteksi (WID: $WID). Mengaktifkan fokus jendela..."
+                echo "[SETUP] Jendela MetaTrader terdeteksi (WID: $WID). Mengaktifkan fokus jendela & tombol Next..."
                 DISPLAY=:99 xdotool windowactivate --sync "$WID" 2>/dev/null || true
                 DISPLAY=:99 xdotool windowfocus --sync "$WID" 2>/dev/null || true
                 sleep 1
-
-                echo "[SETUP] Mengirim sekuens pencentangan lisensi (Tab + Space + Tab + Return/Alt+N)..."
                 for step in 1 2 3; do
                     DISPLAY=:99 xdotool key --window "$WID" Tab 2>/dev/null || true
                     sleep 0.3
@@ -207,20 +205,6 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
                 break
             fi
         done
-
-        # Fallback jika WID tidak terdeteksi via search name
-        if [ -z "$WID" ]; then
-            echo "[SETUP] Menjalankan fallback sekuens keyboard global ke DISPLAY=:99..."
-            DISPLAY=:99 xdotool key Tab 2>/dev/null || true
-            sleep 0.5
-            DISPLAY=:99 xdotool key space 2>/dev/null || true
-            sleep 0.5
-            DISPLAY=:99 xdotool key Tab 2>/dev/null || true
-            sleep 0.5
-            DISPLAY=:99 xdotool key alt+n 2>/dev/null || true
-            sleep 0.5
-            DISPLAY=:99 xdotool key Return 2>/dev/null || true
-        fi
     fi
 
     echo "[SETUP] Mengunduh & memasang komponen MetaTrader 5 (membutuhkan 1-3 menit)..."
@@ -233,7 +217,14 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
             SIZE=$(stat -c%s "$FOUND_EXE" 2>/dev/null || echo 0)
             if [ "$SIZE" -gt 5000000 ]; then
                 MT5_EXE="$FOUND_EXE"
-                echo "[OK] MetaTrader 5 Terminal BERHASIL ter-install ($SIZE bytes) di $MT5_EXE!"
+                TARGET_DIR="$WINEPREFIX/drive_c/Program Files/MetaTrader 5"
+                mkdir -p "$TARGET_DIR"
+                REAL_DIR=$(dirname "$FOUND_EXE")
+                if [ "$REAL_DIR" != "$TARGET_DIR" ]; then
+                    echo "[SETUP] Memindahkan berkas MT5 dari $REAL_DIR ke $TARGET_DIR..."
+                    cp -rf "$REAL_DIR"/* "$TARGET_DIR/" 2>/dev/null || true
+                fi
+                echo "[OK] MetaTrader 5 Terminal BERHASIL ter-install ($SIZE bytes) di $TARGET_DIR/terminal64.exe!"
                 sleep 2
                 break
             else
