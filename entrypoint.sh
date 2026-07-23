@@ -19,7 +19,8 @@ fi
 Xvfb :99 -screen 0 1024x768x16 &
 sleep 2
 
-# Configure Wine GDI Rendering for headless Xvfb
+# Configure Wine GDI Rendering & Windows 10 mode for headless Xvfb
+winecfg -v=win10 >/dev/null 2>&1 || true
 wine reg add "HKCU\Software\Wine\Direct3D" /v "renderer" /t REG_SZ /d "gdi" /f >/dev/null 2>&1 || true
 wine reg add "HKCU\Software\Wine\Direct3D" /v "OffscreenRenderingMode" /t REG_SZ /d "backbuffer" /f >/dev/null 2>&1 || true
 wine reg add "HKCU\Software\MetaQuotes\Terminal" /v "Path" /t REG_SZ /d "C:\Program Files\MetaTrader 5" /f >/dev/null 2>&1 || true
@@ -112,10 +113,21 @@ if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ]; then
 fi
 
 if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 10000000 ]; then
-    echo "[INFO] MT5 Terminal belum lengkap/ter-install. Mengunduh & menginstall MetaTrader 5..."
+    echo "[INFO] MT5 Terminal belum lengkap/ter-install. Mengunduh WebView2 & MetaTrader 5..."
     mkdir -p /tmp/mt5-install
     cd /tmp/mt5-install
-    wget -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O mt5setup.exe
+
+    # Install Microsoft Edge WebView2 Runtime (Wajib untuk installer MT5 versi terbaru)
+    if [ ! -f "$WINEPREFIX/drive_c/wv2_installed" ]; then
+        echo "[SETUP] Mengunduh & menginstall Microsoft Edge WebView2 Runtime di Wine..."
+        wget -q "https://msedge.sf.dl.delivery.mp.microsoft.com/filestreamingservice/files/c1336fd6-a2eb-4669-9b03-949fc70ace0e/MicrosoftEdgeWebview2Setup.exe" -O WebView2Setup.exe || true
+        DISPLAY=:99 wine WebView2Setup.exe /silent /install >/dev/null 2>&1 || true
+        touch "$WINEPREFIX/drive_c/wv2_installed"
+        sleep 3
+    fi
+
+    echo "[SETUP] Mengunduh installer MetaTrader 5..."
+    wget -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O mt5setup.exe || true
     DISPLAY=:99 wine mt5setup.exe /auto &
 
     # Menunggu & mengirimkan input tombol Next (Alt+N), Return, & Space ke GUI installer mt5setup di DISPLAY :99
