@@ -172,6 +172,19 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
     if [ -s "$SETUP_BIN" ]; then
         echo "[SETUP] Menjalankan Wine setup $SETUP_BIN (/auto /path:\"C:\\Program Files\\MetaTrader 5\")..."
         DISPLAY=:99 wine "$SETUP_BIN" /auto /path:"C:\Program Files\MetaTrader 5" &
+        
+        # Kirimkan Space, Alt+N, & Return SEKALI SAJA di detik ke-5 untuk menekan tombol Next >
+        sleep 5
+        WID=$(DISPLAY=:99 xdotool search --name "MetaTrader" 2>/dev/null | head -n 1 || true)
+        if [ -n "$WID" ]; then
+            DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
+            DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
+            DISPLAY=:99 xdotool key --window "$WID" Return 2>/dev/null || true
+        else
+            DISPLAY=:99 xdotool key space 2>/dev/null || true
+            DISPLAY=:99 xdotool key alt+n 2>/dev/null || true
+            DISPLAY=:99 xdotool key Return 2>/dev/null || true
+        fi
     fi
 
     echo "[SETUP] Mengunduh & memasang komponen MetaTrader 5 (membutuhkan 1-3 menit)..."
@@ -192,18 +205,6 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
             fi
         else
             echo "[SETUP #$COUNTER/90] Menunggu installer MT5 mengekstrak biner ke C:\Program Files\MetaTrader 5..."
-        fi
-
-        # Kirimkan Space (centang lisensi), Alt+N (Next), & Return untuk memicu instalasi
-        WID=$(DISPLAY=:99 xdotool search --name "MetaTrader" 2>/dev/null | head -n 1 || true)
-        if [ -n "$WID" ]; then
-            DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
-            DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
-            DISPLAY=:99 xdotool key --window "$WID" Return 2>/dev/null || true
-        else
-            DISPLAY=:99 xdotool key space 2>/dev/null || true
-            DISPLAY=:99 xdotool key alt+n 2>/dev/null || true
-            DISPLAY=:99 xdotool key Return 2>/dev/null || true
         fi
     done
     cd /app
