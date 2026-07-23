@@ -1250,7 +1250,7 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         lines.append(f"📈 **Market Watch**: {sym_count} Simbol Loaded{gold_str}")
 
     except Exception as e:
-        log.error(f"cmd_status exception: {e}", exc_info=True)
+        log.info(f"cmd_status startup sync: {e}")
         lines = [
             "📊 **STATUS SYSTEM MT5**\n",
             "🟢 **MT5 Terminal**: Active (Process Running)",
