@@ -104,12 +104,15 @@ fi
 
 echo "[2/4] Checking MetaTrader 5 Terminal in Wine..."
 FOUND_EXE=$(find "$WINEPREFIX/drive_c" -name "terminal64.exe" 2>/dev/null | head -n 1 || true)
-if [ -n "$FOUND_EXE" ]; then
-    MT5_EXE="$FOUND_EXE"
+if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ]; then
+    SIZE=$(stat -c%s "$FOUND_EXE" 2>/dev/null || echo 0)
+    if [ "$SIZE" -gt 10000000 ]; then
+        MT5_EXE="$FOUND_EXE"
+    fi
 fi
 
-if [ ! -f "$MT5_EXE" ]; then
-    echo "[INFO] MT5 Terminal belum ada. Mengunduh & menginstall MetaTrader 5..."
+if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 10000000 ]; then
+    echo "[INFO] MT5 Terminal belum lengkap/ter-install. Mengunduh & menginstall MetaTrader 5..."
     mkdir -p /tmp/mt5-install
     cd /tmp/mt5-install
     wget -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O mt5setup.exe
@@ -121,10 +124,15 @@ if [ ! -f "$MT5_EXE" ]; then
         sleep 3
         FOUND_EXE=$(find "$WINEPREFIX/drive_c" -name "terminal64.exe" 2>/dev/null | head -n 1 || true)
         if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ]; then
-            MT5_EXE="$FOUND_EXE"
-            echo "[OK] MetaTrader 5 Terminal BERHASIL ter-install di $MT5_EXE!"
-            sleep 3
-            break
+            SIZE=$(stat -c%s "$FOUND_EXE" 2>/dev/null || echo 0)
+            if [ "$SIZE" -gt 10000000 ]; then
+                MT5_EXE="$FOUND_EXE"
+                echo "[OK] MetaTrader 5 Terminal BERHASIL ter-install ($SIZE bytes) di $MT5_EXE!"
+                sleep 3
+                break
+            else
+                echo "[SETUP] MT5 sedang diunduh installer (ukuran saat ini: $SIZE bytes)..."
+            fi
         fi
         WID=$(DISPLAY=:99 xdotool search --name "MetaTrader" 2>/dev/null | head -n 1 || true)
         if [ -n "$WID" ]; then
@@ -141,13 +149,13 @@ if [ ! -f "$MT5_EXE" ]; then
 fi
 
 FOUND_EXE=$(find "$WINEPREFIX/drive_c" -name "terminal64.exe" 2>/dev/null | head -n 1 || true)
-if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ]; then
+if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ] && [ $(stat -c%s "$FOUND_EXE" 2>/dev/null || echo 0) -gt 10000000 ]; then
     MT5_EXE="$FOUND_EXE"
     echo "[OK] Launching MT5 Terminal in Wine: $MT5_EXE (DISPLAY=:99)..."
     DISPLAY=:99 wine "$MT5_EXE" &
     sleep 5
 else
-    echo "⚠️ WARNING: MT5 Terminal ($MT5_EXE) belum terinstall dengan sempurna."
+    echo "⚠️ WARNING: MT5 Terminal ($MT5_EXE) belum terinstall dengan sempurna (file belum lengkap)."
 fi
 
 # 5. Start mt5linux server bridge di Wine
