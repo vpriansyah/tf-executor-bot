@@ -5,6 +5,9 @@ import logging
 import threading
 import subprocess
 
+# Ensure DISPLAY is set to :99 for Xvfb virtual display in Wine GUI apps
+os.environ["DISPLAY"] = ":99"
+
 # Force unbuffered output in Wine Python stdout/stderr
 if hasattr(sys.stdout, 'reconfigure'):
     try:
@@ -64,7 +67,7 @@ def connect_mt5_in_background():
         os.system("taskkill /f /im terminal64.exe 2>nul")
         time.sleep(1)
         log.info(f"Spawning single MT5 process: dir='{mt5_dir}', exe='{mt5_path}'")
-        os.system(f'start "" /d "{mt5_dir}" "{mt5_path}"')
+        os.system(f'cmd /c start "" /d "{mt5_dir}" "{mt5_path}"')
         time.sleep(4)
     except Exception as ex:
         log.warning(f"Process spawn warning: {ex}")
