@@ -132,7 +132,9 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 10
 
     # Menunggu & mengirimkan input tombol Next (Alt+N), Return, & Space ke GUI installer mt5setup di DISPLAY :99
     echo "[SETUP] Mengunduh & memasang komponen MetaTrader 5 (membutuhkan 1-2 menit)..."
-    for i in {1..60}; do
+    COUNTER=0
+    while [ $COUNTER -lt 60 ]; do
+        COUNTER=$((COUNTER + 1))
         sleep 3
         FOUND_EXE=$(find "$WINEPREFIX/drive_c" -name "terminal64.exe" 2>/dev/null | head -n 1 || true)
         if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ]; then
@@ -143,9 +145,12 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 10
                 sleep 3
                 break
             else
-                echo "[SETUP] MT5 sedang diunduh installer (ukuran saat ini: $SIZE bytes)..."
+                echo "[SETUP #$COUNTER/60] MT5 sedang diunduh installer (ukuran saat ini: $SIZE bytes)..."
             fi
+        else
+            echo "[SETUP #$COUNTER/60] Menunggu installer MT5 mengunduh & mengekstrak komponen..."
         fi
+
         WID=$(DISPLAY=:99 xdotool search --name "MetaTrader" 2>/dev/null | head -n 1 || true)
         if [ -n "$WID" ]; then
             DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
@@ -179,7 +184,9 @@ BRIDGE_PID=$!
 # Menunggu mt5linux bridge siap di port 18812
 echo "Menunggu mt5linux bridge server di localhost:18812..."
 BRIDGE_READY=0
-for i in {1..45}; do
+COUNTER=0
+while [ $COUNTER -lt 45 ]; do
+    COUNTER=$((COUNTER + 1))
     if nc -z localhost 18812 2>/dev/null; then
         echo "[OK] mt5linux bridge server SIAP di localhost:18812!"
         BRIDGE_READY=1
