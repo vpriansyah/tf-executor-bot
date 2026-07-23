@@ -130,7 +130,7 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 10
     wget -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O mt5setup.exe || true
     DISPLAY=:99 wine mt5setup.exe /auto &
 
-    # Menunggu & mengirimkan input tombol Next (Alt+N), Return, Space, & Tab ke GUI installer mt5setup di DISPLAY :99
+    # Menunggu & mengirimkan input tombol Next (Alt+N) & Return di 12 detik pertama untuk memulai unduhan
     echo "[SETUP] Mengunduh & memasang komponen MetaTrader 5 (membutuhkan 1-3 menit)..."
     COUNTER=0
     while [ $COUNTER -lt 90 ]; do
@@ -142,6 +142,7 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 10
             if [ "$SIZE" -gt 10000000 ]; then
                 MT5_EXE="$FOUND_EXE"
                 echo "[OK] MetaTrader 5 Terminal BERHASIL ter-install ($SIZE bytes) di $MT5_EXE!"
+                DISPLAY=:99 xdotool key Return 2>/dev/null || true
                 sleep 3
                 break
             else
@@ -151,19 +152,16 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 10
             echo "[SETUP #$COUNTER/90] Menunggu installer MT5 mengunduh & mengekstrak komponen..."
         fi
 
-        WID=$(DISPLAY=:99 xdotool search --name "MetaTrader" 2>/dev/null | head -n 1 || true)
-        if [ -n "$WID" ]; then
-            DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
-            DISPLAY=:99 xdotool key --window "$WID" Tab 2>/dev/null || true
-            DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
-            DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
-            DISPLAY=:99 xdotool key --window "$WID" Return 2>/dev/null || true
-        else
-            DISPLAY=:99 xdotool key space 2>/dev/null || true
-            DISPLAY=:99 xdotool key Tab 2>/dev/null || true
-            DISPLAY=:99 xdotool key space 2>/dev/null || true
-            DISPLAY=:99 xdotool key alt+n 2>/dev/null || true
-            DISPLAY=:99 xdotool key Return 2>/dev/null || true
+        # Hanya kirim perintah Next di 4 perulangan awal (12 detik pertama) agar tidak membatalkan installer
+        if [ $COUNTER -le 4 ]; then
+            WID=$(DISPLAY=:99 xdotool search --name "MetaTrader" 2>/dev/null | head -n 1 || true)
+            if [ -n "$WID" ]; then
+                DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
+                DISPLAY=:99 xdotool key --window "$WID" Return 2>/dev/null || true
+            else
+                DISPLAY=:99 xdotool key alt+n 2>/dev/null || true
+                DISPLAY=:99 xdotool key Return 2>/dev/null || true
+            fi
         fi
     done
     cd /app
