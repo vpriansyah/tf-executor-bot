@@ -42,7 +42,15 @@ login_acc = int(login_str) if login_str.isdigit() else 0
 
 def connect_mt5_in_background():
     time.sleep(1)
-    mt5_path = r"C:\Program Files\MetaTrader 5\terminal64.exe"
+    # Search for actual terminal64.exe location inside Wine drive_c
+    mt5_path = r"C:\MetaTrader5\terminal64.exe"
+    wine_drive_c = os.environ.get("WINEPREFIX", "/root/.wine") + "/drive_c"
+    for candidate in [r"C:\MetaTrader5\terminal64.exe", r"C:\Program Files\MetaTrader 5\terminal64.exe"]:
+        rel_path = candidate[3:].replace("\\", "/")
+        if os.path.exists(os.path.join(wine_drive_c, rel_path)):
+            mt5_path = candidate
+            break
+
     log.info(f"Connecting to MT5 terminal (path='{mt5_path}', login={login_acc}, server='{server_name}')...")
 
     init_ok = False
@@ -56,7 +64,7 @@ def connect_mt5_in_background():
             if not init_ok and attempt == 3:
                 log.info("Attempting to launch terminal64.exe process directly via Wine start...")
                 try:
-                    os.system(r'start "" "C:\Program Files\MetaTrader 5\terminal64.exe"')
+                    os.system(f'start "" "{mt5_path}"')
                 except Exception as ex:
                     log.warning(f"Direct start error: {ex}")
 
@@ -103,9 +111,6 @@ def connect_mt5_in_background():
             except Exception as e:
                 log.error(f"Failed to toggle xdotool Ctrl+E: {e}")
 
-
-
-
     # 3. Check and load key trading symbols (Gold & Major Forex) into Market Watch
     symbols = mt5.symbols_get()
     if symbols:
@@ -113,7 +118,6 @@ def connect_mt5_in_background():
         gold_syms = [s.name for s in symbols if 'GOLD' in s.name.upper() or 'XAU' in s.name.upper()]
         log.info(f"Available Gold symbols from broker: {gold_syms}")
 
-        # Select Gold & Major Forex symbols without freezing RPyC thread
         selected_count = 0
         key_keywords = ["XAU", "GOLD", "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF", "BTC"]
         for s in symbols:
@@ -126,12 +130,11 @@ def connect_mt5_in_background():
         log.warning("No symbols loaded yet from MT5 broker.")
 
 
+# Start MT5 terminal connection in daemon background thread so port 18812 opens instantly
+bg_thread = threading.Thread(target=connect_mt5_in_background, daemon=True)
+bg_thread.start()
 
-
-# 3. Connect MT5 terminal synchronously so MT5 is 100% initialized & logged in before opening port 18812
-connect_mt5_in_background()
-
-# 4. Launch RPyC ThreadedServer on port 18812 with 120s sync timeout
+# Launch RPyC SlaveServer on port 18812 immediately
 log.info("Launching RPyC SlaveServer on 0.0.0.0:18812...")
 rpyc_server = ThreadedServer(
     SlaveService,
