@@ -130,10 +130,10 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 10
     wget -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O mt5setup.exe || true
     DISPLAY=:99 wine mt5setup.exe /auto &
 
-    # Menunggu & mengirimkan input tombol Next (Alt+N), Return, & Space ke GUI installer mt5setup di DISPLAY :99
-    echo "[SETUP] Mengunduh & memasang komponen MetaTrader 5 (membutuhkan 1-2 menit)..."
+    # Menunggu & mengirimkan input tombol Next (Alt+N), Return, Space, & Tab ke GUI installer mt5setup di DISPLAY :99
+    echo "[SETUP] Mengunduh & memasang komponen MetaTrader 5 (membutuhkan 1-3 menit)..."
     COUNTER=0
-    while [ $COUNTER -lt 60 ]; do
+    while [ $COUNTER -lt 90 ]; do
         COUNTER=$((COUNTER + 1))
         sleep 3
         FOUND_EXE=$(find "$WINEPREFIX/drive_c" -name "terminal64.exe" 2>/dev/null | head -n 1 || true)
@@ -145,21 +145,25 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 10
                 sleep 3
                 break
             else
-                echo "[SETUP #$COUNTER/60] MT5 sedang diunduh installer (ukuran saat ini: $SIZE bytes)..."
+                echo "[SETUP #$COUNTER/90] MT5 sedang diunduh installer (ukuran saat ini: $SIZE bytes)..."
             fi
         else
-            echo "[SETUP #$COUNTER/60] Menunggu installer MT5 mengunduh & mengekstrak komponen..."
+            echo "[SETUP #$COUNTER/90] Menunggu installer MT5 mengunduh & mengekstrak komponen..."
         fi
 
         WID=$(DISPLAY=:99 xdotool search --name "MetaTrader" 2>/dev/null | head -n 1 || true)
         if [ -n "$WID" ]; then
+            DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
+            DISPLAY=:99 xdotool key --window "$WID" Tab 2>/dev/null || true
+            DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
             DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
             DISPLAY=:99 xdotool key --window "$WID" Return 2>/dev/null || true
-            DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
         else
+            DISPLAY=:99 xdotool key space 2>/dev/null || true
+            DISPLAY=:99 xdotool key Tab 2>/dev/null || true
+            DISPLAY=:99 xdotool key space 2>/dev/null || true
             DISPLAY=:99 xdotool key alt+n 2>/dev/null || true
             DISPLAY=:99 xdotool key Return 2>/dev/null || true
-            DISPLAY=:99 xdotool key space 2>/dev/null || true
         fi
     done
     cd /app
