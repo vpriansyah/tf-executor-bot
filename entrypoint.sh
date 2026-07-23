@@ -103,10 +103,10 @@ fi
 
 echo "[2/4] Checking MetaTrader 5 Terminal in Wine..."
 if [ -f "$MT5_EXE" ]; then
-    echo "[OK] Found MT5 Terminal at $MT5_EXE. Bridge server will initialize MT5 directly..."
+    echo "[OK] Found MT5 Terminal at $MT5_EXE. Launching MT5 Terminal in Wine (DISPLAY=:99)..."
+    DISPLAY=:99 wine "$MT5_EXE" &
+    sleep 3
 else
-
-
     echo "[INFO] MT5 Terminal belum ada. Mengunduh & install..."
     mkdir -p /tmp/mt5-install
     cd /tmp/mt5-install
@@ -119,7 +119,7 @@ else
             sleep 3
             if [ -f "$MT5_EXE" ]; then
                 echo "[OK] MetaTrader 5 Terminal berhasil ter-install!"
-                wine "$MT5_EXE" &
+                DISPLAY=:99 wine "$MT5_EXE" &
                 break
             fi
             DISPLAY=:99 xdotool key Return 2>/dev/null || true
