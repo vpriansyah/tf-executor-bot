@@ -131,16 +131,33 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 10
     WINEARCH=win64 wineboot -u >/dev/null 2>&1 || true
     sleep 3
 
-    echo "[SETUP] Mengunduh installer MetaTrader 5 (Finex Broker & MetaQuotes)..."
-    wget -q https://download.mql5.com/cdn/web/finex.bisnis.solusi/mt5/finex5setup.exe -O finex5setup.exe || true
-    wget -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O mt5setup.exe || true
+    echo "[SETUP] Mengunduh installer MetaTrader 5 resmi dengan Desktop User-Agent..."
+    UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    wget --user-agent="$UA" -q https://download.mql5.com/cdn/web/finex.bisnis.solusi/mt5/finex5setup.exe -O finex5setup.exe || true
+    wget --user-agent="$UA" -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O mt5setup.exe || true
 
-    if [ -s finex5setup.exe ]; then
-        echo "[SETUP] Menjalankan installer Finex MT5 secara silent (/S /auto)..."
-        DISPLAY=:99 wine finex5setup.exe /S /auto /D=C:\Program Files\MetaTrader 5 &
-    else
-        echo "[SETUP] Menjalankan installer MetaTrader 5 secara silent (/S /auto)..."
-        DISPLAY=:99 wine mt5setup.exe /S /auto /D=C:\Program Files\MetaTrader 5 &
+    # Ekstraksi Biner MT5 secara langsung menggunakan 7z jika installer terunduh sempurna (>5MB)
+    SETUP_BIN=""
+    if [ -s finex5setup.exe ] && [ $(stat -c%s finex5setup.exe || echo 0) -gt 5000000 ]; then
+        SETUP_BIN="finex5setup.exe"
+    elif [ -s mt5setup.exe ] && [ $(stat -c%s mt5setup.exe || echo 0) -gt 5000000 ]; then
+        SETUP_BIN="mt5setup.exe"
+    fi
+
+    if [ -n "$SETUP_BIN" ]; then
+        echo "[SETUP] Meng-ekstrak biner MT5 (18.3MB) secara langsung dari $SETUP_BIN menggunakan 7z..."
+        mkdir -p "$WINEPREFIX/drive_c/Program Files/MetaTrader 5"
+        7z x -y "$SETUP_BIN" -o/tmp/mt5-unpacked >/dev/null 2>&1 || true
+        UNPACKED_EXE=$(find /tmp/mt5-unpacked -size +10M 2>/dev/null | head -n 1 || true)
+        if [ -n "$UNPACKED_EXE" ] && [ -f "$UNPACKED_EXE" ]; then
+            cp -f "$UNPACKED_EXE" "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe"
+            echo "[OK] Berhasil mengekstrak terminal64.exe (18.3 MB) ke C:\\Program Files\\MetaTrader 5!"
+        fi
+    fi
+
+    if [ -s "$SETUP_BIN" ]; then
+        echo "[SETUP] Menjalankan Wine setup $SETUP_BIN secara silent..."
+        DISPLAY=:99 wine "$SETUP_BIN" /S /auto /D=C:\Program Files\MetaTrader 5 &
     fi
 
     # Menunggu & mengirimkan input tombol Next (Alt+N) & Return ke GUI installer mt5setup di DISPLAY :99
