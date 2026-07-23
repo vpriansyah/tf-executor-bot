@@ -170,8 +170,8 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
     fi
 
     if [ -s "$SETUP_BIN" ]; then
-        echo "[SETUP] Menjalankan Wine setup $SETUP_BIN secara silent..."
-        DISPLAY=:99 wine "$SETUP_BIN" /S /auto /D=C:\Program Files\MetaTrader 5 &
+        echo "[SETUP] Menjalankan Wine setup $SETUP_BIN (/auto /path:\"C:\\Program Files\\MetaTrader 5\")..."
+        DISPLAY=:99 wine "$SETUP_BIN" /auto /path:"C:\Program Files\MetaTrader 5" &
     fi
 
     echo "[SETUP] Mengunduh & memasang komponen MetaTrader 5 (membutuhkan 1-3 menit)..."
@@ -192,6 +192,14 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
             fi
         else
             echo "[SETUP #$COUNTER/90] Menunggu installer MT5 mengekstrak biner ke C:\Program Files\MetaTrader 5..."
+        fi
+
+        # Hanya kirimkan tombol ke jendela GUI MetaTrader jika jendela wizard terdeteksi aktif
+        WID=$(DISPLAY=:99 xdotool search --name "MetaTrader" 2>/dev/null | head -n 1 || true)
+        if [ -n "$WID" ]; then
+            DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
+            DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
+            DISPLAY=:99 xdotool key --window "$WID" Return 2>/dev/null || true
         fi
     done
     cd /app
