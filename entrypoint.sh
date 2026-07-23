@@ -102,29 +102,40 @@ if [ -d "$APPDATA_MQ" ]; then
 fi
 
 echo "[2/4] Checking MetaTrader 5 Terminal in Wine..."
+FOUND_EXE=$(find "$WINEPREFIX/drive_c" -name "terminal64.exe" 2>/dev/null | head -n 1)
+if [ -n "$FOUND_EXE" ]; then
+    MT5_EXE="$FOUND_EXE"
+fi
+
 if [ ! -f "$MT5_EXE" ]; then
     echo "[INFO] MT5 Terminal belum ada. Mengunduh & menginstall MetaTrader 5..."
     mkdir -p /tmp/mt5-install
     cd /tmp/mt5-install
-    wget -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe
+    wget -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O mt5setup.exe
     DISPLAY=:99 wine mt5setup.exe /auto &
 
-    # Menunggu & menekan tombol Next/Finish pada installer GUI di DISPLAY :99
+    # Menunggu & mengirimkan input tombol Next (Alt+N), Return, & Space ke GUI installer mt5setup di DISPLAY :99
     echo "[SETUP] Mengunduh & memasang komponen MetaTrader 5 (membutuhkan 1-2 menit)..."
     for i in {1..60}; do
         sleep 3
-        if [ -f "$MT5_EXE" ]; then
+        FOUND_EXE=$(find "$WINEPREFIX/drive_c" -name "terminal64.exe" 2>/dev/null | head -n 1)
+        if [ -n "$FOUND_EXE" ]; then
+            MT5_EXE="$FOUND_EXE"
             echo "[OK] MetaTrader 5 Terminal BERHASIL ter-install di $MT5_EXE!"
             sleep 3
             break
         fi
+        DISPLAY=:99 xdotool key alt+n 2>/dev/null || true
         DISPLAY=:99 xdotool key Return 2>/dev/null || true
+        DISPLAY=:99 xdotool key space 2>/dev/null || true
     done
     cd /app
 fi
 
-if [ -f "$MT5_EXE" ]; then
-    echo "[OK] Launching MT5 Terminal in Wine (DISPLAY=:99)..."
+FOUND_EXE=$(find "$WINEPREFIX/drive_c" -name "terminal64.exe" 2>/dev/null | head -n 1)
+if [ -n "$FOUND_EXE" ]; then
+    MT5_EXE="$FOUND_EXE"
+    echo "[OK] Launching MT5 Terminal in Wine: $MT5_EXE (DISPLAY=:99)..."
     DISPLAY=:99 wine "$MT5_EXE" &
     sleep 5
 else
