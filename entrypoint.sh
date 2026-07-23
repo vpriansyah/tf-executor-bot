@@ -230,25 +230,7 @@ if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ] && [ $(stat -c%s "$FOUND_EXE" 2>/d
     MT5_EXE="$FOUND_EXE"
     MT5_DIR=$(dirname "$MT5_EXE")
     EXE_NAME=$(basename "$MT5_EXE")
-    echo "[OK] Launching MT5 Terminal in Wine ($MT5_DIR/$EXE_NAME) (DISPLAY=:99)..."
-    cd "$MT5_DIR"
-    if [ -n "$MT5_LOGIN" ] && [ "$MT5_LOGIN" != "0" ]; then
-        DISPLAY=:99 wine "$EXE_NAME" /portable /login:"$MT5_LOGIN" /password:"$MT5_PASSWORD" /server:"$MT5_SERVER" &
-    else
-        DISPLAY=:99 wine "$EXE_NAME" /portable &
-    fi
-    cd /app
-    
-    # Background loop to dismiss any blocking modal dialogs (like "Open an Account") 
-    # that cause mt5.initialize() to hang with IPC timeout.
-    (
-        for i in {1..15}; do
-            sleep 3
-            DISPLAY=:99 xdotool key Escape 2>/dev/null || true
-        done
-    ) &
-
-    sleep 3
+    echo "[OK] Terminal found at $MT5_DIR/$EXE_NAME. Will be launched by Python bridge..."
 else
     echo "⚠️ WARNING: MT5 Terminal ($MT5_EXE) belum terinstall dengan sempurna (file belum lengkap)."
 fi

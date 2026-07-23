@@ -65,15 +65,13 @@ def connect_mt5_in_background():
                     mt5_path = candidate
                     break
 
-            init_ok = mt5.initialize(path=mt5_path, portable=True)
+            if login_acc > 0 and password:
+                init_ok = mt5.initialize(path=mt5_path, login=login_acc, password=password, server=server_name, portable=True)
+            else:
+                init_ok = mt5.initialize(path=mt5_path, portable=True)
 
             if init_ok:
                 log.info(f"MT5 terminal IPC initialized successfully on attempt #{attempt}!")
-                # Attempt login if credentials are provided
-                if login_acc > 0 and password:
-                    log.info(f"Logging in to broker account #{login_acc} @ {server_name}...")
-                    login_res = mt5.login(login_acc, password=password, server=server_name)
-                    log.info(f"MT5 login result: {login_res}, last_error: {mt5.last_error()}")
                 break
         except Exception as e:
             log.warning(f"Attempt #{attempt} error: {e}")
