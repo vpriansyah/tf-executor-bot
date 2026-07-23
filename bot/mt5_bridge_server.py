@@ -48,10 +48,10 @@ def connect_mt5_in_background():
     init_ok = False
     for attempt in range(1, 30):
         try:
-            # 1. Initialize IPC connection to MT5 terminal process first
-            init_ok = mt5.initialize(path=mt5_path)
+            # 1. Connect to already running MT5 process first (instant <0.05s)
+            init_ok = mt5.initialize()
             if not init_ok:
-                init_ok = mt5.initialize()
+                init_ok = mt5.initialize(path=mt5_path)
 
             if not init_ok and attempt == 3:
                 log.info("Attempting to launch terminal64.exe process directly via Wine start...")
