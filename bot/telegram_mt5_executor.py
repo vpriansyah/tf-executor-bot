@@ -166,19 +166,22 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger("mt5bot")
 
 # ==== KONFIGURASI - dari .env ====
-load_dotenv()
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
-ALLOWED_USER_ID = int(os.environ.get("ALLOWED_USER_ID", "0"))
-BRIDGE_HOST = os.environ.get("MT5_BRIDGE_HOST", "localhost")
-BRIDGE_PORT = int(os.environ.get("MT5_BRIDGE_PORT", "18812"))
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-DEFAULT_LOT = float(os.environ.get("DEFAULT_LOT", "0.10"))
-AUTO_EXECUTE_IMAGE = os.environ.get("AUTO_EXECUTE_IMAGE", "false").lower() == "true"
+def reload_config():
+    global BOT_TOKEN, ALLOWED_USER_ID, BRIDGE_HOST, BRIDGE_PORT, GEMINI_API_KEY, DEFAULT_LOT, AUTO_EXECUTE_IMAGE, MT5_LOGIN, MT5_PASSWORD, MT5_SERVER
+    load_dotenv(override=True)
+    BOT_TOKEN = os.environ.get("BOT_TOKEN", "")
+    ALLOWED_USER_ID = int(os.environ.get("ALLOWED_USER_ID", "0")) if os.environ.get("ALLOWED_USER_ID", "").isdigit() else 0
+    BRIDGE_HOST = os.environ.get("MT5_BRIDGE_HOST", "localhost")
+    BRIDGE_PORT = int(os.environ.get("MT5_BRIDGE_PORT", "18812")) if os.environ.get("MT5_BRIDGE_PORT", "").isdigit() else 18812
+    GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+    DEFAULT_LOT = float(os.environ.get("DEFAULT_LOT", "0.10")) if os.environ.get("DEFAULT_LOT", "").replace(".", "", 1).isdigit() else 0.10
+    AUTO_EXECUTE_IMAGE = os.environ.get("AUTO_EXECUTE_IMAGE", "false").lower() == "true"
 
-# Kredensial Broker MT5 (Finex)
-MT5_LOGIN = int(os.environ.get("MT5_LOGIN", "0")) if os.environ.get("MT5_LOGIN", "").isdigit() else None
-MT5_PASSWORD = os.environ.get("MT5_PASSWORD", "")
-MT5_SERVER = os.environ.get("MT5_SERVER", "Finex-Demo")
+    MT5_LOGIN = int(os.environ.get("MT5_LOGIN", "0")) if os.environ.get("MT5_LOGIN", "").isdigit() else None
+    MT5_PASSWORD = os.environ.get("MT5_PASSWORD", "")
+    MT5_SERVER = os.environ.get("MT5_SERVER", "FinexBisnisSolusi-Demo")
+
+reload_config()
 
 mt5 = None
 PENDING_IMAGE_ORDERS = {}
@@ -1192,6 +1195,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handler /status ringkas & rapi untuk layar mobile."""
+    reload_config()
     if not is_owner(update):
         await update.message.reply_text("Bukan pemilik bot ini. Akses ditolak.")
         return
