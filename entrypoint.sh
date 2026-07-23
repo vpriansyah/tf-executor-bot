@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+# Note: set -e removed to prevent premature exits during wine/xdotool subshell commands
 
 export DISPLAY=:99
 export WINEPREFIX=/root/.wine
