@@ -131,79 +131,88 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
     WINEARCH=win64 wineboot -u >/dev/null 2>&1 || true
     sleep 3
 
-    echo "[SETUP] Mengunduh installer MetaTrader 5 resmi dengan Desktop User-Agent..."
-    UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    wget --user-agent="$UA" -q https://download.mql5.com/cdn/web/finex.bisnis.solusi/mt5/finex5setup.exe -O finex5setup.exe || true
-    wget --user-agent="$UA" -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O mt5setup.exe || true
-
-    # Ekstraksi Biner MT5 secara langsung menggunakan 7z jika installer terunduh (>500KB)
-    SETUP_BIN=""
-    if [ -s finex5setup.exe ] && [ $(stat -c%s finex5setup.exe || echo 0) -gt 500000 ]; then
-        SETUP_BIN="finex5setup.exe"
-    elif [ -s mt5setup.exe ] && [ $(stat -c%s mt5setup.exe || echo 0) -gt 500000 ]; then
-        SETUP_BIN="mt5setup.exe"
-    fi
-
-    if [ -n "$SETUP_BIN" ]; then
-        echo "[SETUP] Meng-ekstrak biner MT5 (2-stage 7z unpack) dari $SETUP_BIN..."
+    if [ -f "/app/mt5_app/terminal64.exe" ]; then
+        echo "[SETUP] Menggunakan instalasi MT5 lokal dari /app/mt5_app..."
         TARGET_DIR="$WINEPREFIX/drive_c/Program Files/MetaTrader 5"
         mkdir -p "$TARGET_DIR"
-        rm -rf /tmp/mt5-step1 /tmp/mt5-step2
-        7z x -y "$SETUP_BIN" -o/tmp/mt5-step1 >/dev/null 2>&1 || true
-        SUB_ARCH=$(find /tmp/mt5-step1 -name "[0]" -o -name "*.cab" -o -size +10M 2>/dev/null | head -n 1 || true)
-        if [ -n "$SUB_ARCH" ]; then
-            echo "[SETUP] Unpacking biner utama dari sub-arsip $SUB_ARCH..."
-            7z x -y "$SUB_ARCH" -o/tmp/mt5-step2/ >/dev/null 2>&1 || true
-        fi
-        
-        FOUND_REAL=$(find /tmp/mt5-step1 /tmp/mt5-step2 -type f -size +5M 2>/dev/null | grep -i "terminal" | head -n 1 || true)
-        if [ -n "$FOUND_REAL" ] && [ -f "$FOUND_REAL" ]; then
-            REAL_DIR=$(dirname "$FOUND_REAL")
-            echo "[SETUP] Memindahkan berkas MT5 dari $REAL_DIR ke $TARGET_DIR..."
-            cp -rf "$REAL_DIR"/* "$TARGET_DIR/" 2>/dev/null || true
-            mkdir -p "$WINEPREFIX/drive_c/MetaTrader5"
-            cp -rf "$REAL_DIR"/* "$WINEPREFIX/drive_c/MetaTrader5/" 2>/dev/null || true
-            MT5_EXE="$TARGET_DIR/terminal64.exe"
-            SIZE=$(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0)
-            echo "[OK] Berhasil mengekstrak & memindahkan terminal64.exe PE32+ ($SIZE bytes) ke $MT5_EXE!"
-        fi
-    fi
+        cp -rf /app/mt5_app/* "$TARGET_DIR/" 2>/dev/null || true
+        MT5_EXE="$TARGET_DIR/terminal64.exe"
+        echo "[OK] Berhasil menyalin MT5 dari /app/mt5_app!"
+    else
+        echo "[SETUP] Mengunduh installer MetaTrader 5 resmi dengan Desktop User-Agent..."
+        UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        wget --user-agent="$UA" -q https://download.mql5.com/cdn/web/finex.bisnis.solusi/mt5/finex5setup.exe -O finex5setup.exe || true
+        wget --user-agent="$UA" -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O mt5setup.exe || true
 
-    if [ -s "$SETUP_BIN" ]; then
-        echo "[SETUP] Menjalankan Wine setup $SETUP_BIN secara silent (/auto /path:C:\\MetaTrader5)..."
-        DISPLAY=:99 wine "$SETUP_BIN" /auto /path:C:\MetaTrader5 &
-    fi
-
-    echo "[SETUP] Mengunduh & memasang komponen MetaTrader 5 (membutuhkan 1-3 menit)..."
-    COUNTER=0
-    while [ $COUNTER -lt 90 ]; do
-        COUNTER=$((COUNTER + 1))
-        sleep 3
-        FOUND_EXE=$(find "$WINEPREFIX/drive_c" \( -iname "terminal64.exe" -o -iname "terminal.exe" \) -size +5M 2>/dev/null | head -n 1 || true)
-        if [ -z "$FOUND_EXE" ]; then
-            FOUND_EXE=$(find "$WINEPREFIX/drive_c" \( -iname "terminal64.exe" -o -iname "terminal.exe" \) 2>/dev/null | head -n 1 || true)
+        # Ekstraksi Biner MT5 secara langsung menggunakan 7z jika installer terunduh (>500KB)
+        SETUP_BIN=""
+        if [ -s finex5setup.exe ] && [ $(stat -c%s finex5setup.exe || echo 0) -gt 500000 ]; then
+            SETUP_BIN="finex5setup.exe"
+        elif [ -s mt5setup.exe ] && [ $(stat -c%s mt5setup.exe || echo 0) -gt 500000 ]; then
+            SETUP_BIN="mt5setup.exe"
         fi
-        if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ]; then
-            SIZE=$(stat -c%s "$FOUND_EXE" 2>/dev/null || echo 0)
-            if [ "$SIZE" -gt 5000000 ]; then
-                MT5_EXE="$FOUND_EXE"
-                TARGET_DIR="$WINEPREFIX/drive_c/Program Files/MetaTrader 5"
-                mkdir -p "$TARGET_DIR"
-                REAL_DIR=$(dirname "$FOUND_EXE")
-                if [ "$REAL_DIR" != "$TARGET_DIR" ]; then
-                    echo "[SETUP] Memindahkan berkas MT5 dari $REAL_DIR ke $TARGET_DIR..."
-                    cp -rf "$REAL_DIR"/* "$TARGET_DIR/" 2>/dev/null || true
-                fi
-                echo "[OK] MetaTrader 5 Terminal BERHASIL ter-install ($SIZE bytes) di $TARGET_DIR/terminal64.exe!"
-                sleep 2
-                break
-            else
-                echo "[SETUP #$COUNTER/90] MT5 sedang mengekstrak biner (ukuran saat ini: $SIZE bytes)..."
+
+        if [ -n "$SETUP_BIN" ]; then
+            echo "[SETUP] Meng-ekstrak biner MT5 (2-stage 7z unpack) dari $SETUP_BIN..."
+            TARGET_DIR="$WINEPREFIX/drive_c/Program Files/MetaTrader 5"
+            mkdir -p "$TARGET_DIR"
+            rm -rf /tmp/mt5-step1 /tmp/mt5-step2
+            7z x -y "$SETUP_BIN" -o/tmp/mt5-step1 >/dev/null 2>&1 || true
+            SUB_ARCH=$(find /tmp/mt5-step1 -name "[0]" -o -name "*.cab" -o -size +10M 2>/dev/null | head -n 1 || true)
+            if [ -n "$SUB_ARCH" ]; then
+                echo "[SETUP] Unpacking biner utama dari sub-arsip $SUB_ARCH..."
+                7z x -y "$SUB_ARCH" -o/tmp/mt5-step2/ >/dev/null 2>&1 || true
             fi
-        else
-            echo "[SETUP #$COUNTER/90] Menunggu installer MT5 mengekstrak biner ke C:\Program Files\MetaTrader 5..."
+            
+            FOUND_REAL=$(find /tmp/mt5-step1 /tmp/mt5-step2 -type f -size +5M 2>/dev/null | grep -i "terminal" | head -n 1 || true)
+            if [ -n "$FOUND_REAL" ] && [ -f "$FOUND_REAL" ]; then
+                REAL_DIR=$(dirname "$FOUND_REAL")
+                echo "[SETUP] Memindahkan berkas MT5 dari $REAL_DIR ke $TARGET_DIR..."
+                cp -rf "$REAL_DIR"/* "$TARGET_DIR/" 2>/dev/null || true
+                mkdir -p "$WINEPREFIX/drive_c/MetaTrader5"
+                cp -rf "$REAL_DIR"/* "$WINEPREFIX/drive_c/MetaTrader5/" 2>/dev/null || true
+                MT5_EXE="$TARGET_DIR/terminal64.exe"
+                SIZE=$(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0)
+                echo "[OK] Berhasil mengekstrak & memindahkan terminal64.exe PE32+ ($SIZE bytes) ke $MT5_EXE!"
+            fi
         fi
-    done
+
+        if [ -s "$SETUP_BIN" ]; then
+            echo "[SETUP] Menjalankan Wine setup $SETUP_BIN secara silent (/auto /path:C:\\MetaTrader5)..."
+            DISPLAY=:99 wine "$SETUP_BIN" /auto /path:C:\MetaTrader5 &
+        fi
+
+        echo "[SETUP] Mengunduh & memasang komponen MetaTrader 5 (membutuhkan 1-3 menit)..."
+        COUNTER=0
+        while [ $COUNTER -lt 90 ]; do
+            COUNTER=$((COUNTER + 1))
+            sleep 3
+            FOUND_EXE=$(find "$WINEPREFIX/drive_c" \( -iname "terminal64.exe" -o -iname "terminal.exe" \) -size +5M 2>/dev/null | head -n 1 || true)
+            if [ -z "$FOUND_EXE" ]; then
+                FOUND_EXE=$(find "$WINEPREFIX/drive_c" \( -iname "terminal64.exe" -o -iname "terminal.exe" \) 2>/dev/null | head -n 1 || true)
+            fi
+            if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ]; then
+                SIZE=$(stat -c%s "$FOUND_EXE" 2>/dev/null || echo 0)
+                if [ "$SIZE" -gt 5000000 ]; then
+                    MT5_EXE="$FOUND_EXE"
+                    TARGET_DIR="$WINEPREFIX/drive_c/Program Files/MetaTrader 5"
+                    mkdir -p "$TARGET_DIR"
+                    REAL_DIR=$(dirname "$FOUND_EXE")
+                    if [ "$REAL_DIR" != "$TARGET_DIR" ]; then
+                        echo "[SETUP] Memindahkan berkas MT5 dari $REAL_DIR ke $TARGET_DIR..."
+                        cp -rf "$REAL_DIR"/* "$TARGET_DIR/" 2>/dev/null || true
+                    fi
+                    echo "[OK] MetaTrader 5 Terminal BERHASIL ter-install ($SIZE bytes) di $TARGET_DIR/terminal64.exe!"
+                    sleep 2
+                    break
+                else
+                    echo "[SETUP #$COUNTER/90] MT5 sedang mengekstrak biner (ukuran saat ini: $SIZE bytes)..."
+                fi
+            else
+                echo "[SETUP #$COUNTER/90] Menunggu installer MT5 mengekstrak biner ke C:\Program Files\MetaTrader 5..."
+            fi
+        done
+    fi
     cd /app
 fi
 
