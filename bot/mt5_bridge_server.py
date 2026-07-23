@@ -139,7 +139,15 @@ rpyc_server = ThreadedServer(
     hostname="0.0.0.0",
     port=18812,
     reuse_addr=True,
-    protocol_config={"sync_request_timeout": 120, "allow_public_attrs": True, "allow_all_attrs": True}
+    protocol_config={
+        "sync_request_timeout": 120, 
+        "allow_public_attrs": True, 
+        "allow_all_attrs": True,
+        "allow_pickle": True,
+        "allow_getattr": True,
+        "allow_setattr": True,
+        "allow_delattr": True
+    }
 )
 rpyc_server.start()
 
