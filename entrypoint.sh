@@ -242,9 +242,13 @@ if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ] && [ $(stat -c%s "$FOUND_EXE" 2>/d
     MT5_EXE="$FOUND_EXE"
     MT5_DIR=$(dirname "$MT5_EXE")
     EXE_NAME=$(basename "$MT5_EXE")
-    echo "[OK] Launching MT5 Terminal in Wine ($MT5_DIR/$EXE_NAME) (DISPLAY=:99)..."
+    LOGIN_ARG=""
+    if [ -n "$MT5_LOGIN" ] && [ "$MT5_LOGIN" != "0" ]; then
+        LOGIN_ARG="/login:$MT5_LOGIN /password:\"$MT5_PASSWORD\" /server:\"$MT5_SERVER\""
+    fi
+    echo "[OK] Launching MT5 Terminal in Wine ($MT5_DIR/$EXE_NAME) with broker credentials (DISPLAY=:99)..."
     cd "$MT5_DIR"
-    DISPLAY=:99 wine "$EXE_NAME" /portable &
+    DISPLAY=:99 wine "$EXE_NAME" /portable $LOGIN_ARG &
     cd /app
     sleep 5
 else
