@@ -1389,16 +1389,17 @@ async def cmd_setaccount(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     def _sync_relogin():
         client = get_mt5()
-        login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
-        if not login_ok:
-            # Fallback re-initialize jika client.login gagal mengganti server
+        if not client.terminal_info():
             mt5_path = r"C:\Program Files\MetaTrader 5\terminal64.exe"
             try:
-                client.initialize(path=mt5_path, login=MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
+                client.initialize(path=mt5_path)
             except Exception:
-                pass
-            login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
+                try:
+                    client.initialize()
+                except Exception:
+                    pass
 
+        login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
         a_info = client.account_info()
         last_err = client.last_error()
         if login_ok and a_info:
@@ -1459,14 +1460,16 @@ async def cmd_setserver(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     def _sync_relogin_server():
         client = get_mt5()
-        login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
-        if not login_ok:
+        if not client.terminal_info():
             mt5_path = r"C:\Program Files\MetaTrader 5\terminal64.exe"
             try:
-                client.initialize(path=mt5_path, login=MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
+                client.initialize(path=mt5_path)
             except Exception:
-                pass
-            login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
+                try:
+                    client.initialize()
+                except Exception:
+                    pass
+        login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
         a_info = client.account_info()
         last_err = client.last_error()
         return login_ok, a_info, last_err
@@ -1524,14 +1527,16 @@ async def cmd_setlogin(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     def _sync_relogin_acc():
         client = get_mt5()
-        login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
-        if not login_ok:
+        if not client.terminal_info():
             mt5_path = r"C:\Program Files\MetaTrader 5\terminal64.exe"
             try:
-                client.initialize(path=mt5_path, login=MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
+                client.initialize(path=mt5_path)
             except Exception:
-                pass
-            login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
+                try:
+                    client.initialize()
+                except Exception:
+                    pass
+        login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
         a_info = client.account_info()
         last_err = client.last_error()
         return login_ok, a_info, last_err

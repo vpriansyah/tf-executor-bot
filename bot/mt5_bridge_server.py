@@ -48,16 +48,18 @@ def connect_mt5_in_background():
     init_ok = False
     for attempt in range(1, 15):
         try:
-            if login_acc > 0 and password and server_name:
-                init_ok = mt5.initialize(path=mt5_path, login=login_acc, password=password, server=server_name)
-            else:
-                init_ok = mt5.initialize(path=mt5_path)
-
+            # 1. Initialize IPC connection to MT5 terminal process first
+            init_ok = mt5.initialize(path=mt5_path)
             if not init_ok:
                 init_ok = mt5.initialize()
 
             if init_ok:
-                log.info(f"MT5 initialize SUCCESS on attempt #{attempt}!")
+                log.info(f"MT5 terminal IPC initialized successfully on attempt #{attempt}!")
+                # 2. Attempt login if credentials are provided
+                if login_acc > 0 and password:
+                    log.info(f"Logging in to broker account #{login_acc} @ {server_name}...")
+                    login_res = mt5.login(login_acc, password=password, server=server_name)
+                    log.info(f"MT5 login result: {login_res}, last_error: {mt5.last_error()}")
                 break
         except Exception as e:
             log.warning(f"Attempt #{attempt} error: {e}")
@@ -69,7 +71,7 @@ def connect_mt5_in_background():
         log.error("FAILED to initialize MT5 terminal after 15 attempts!")
         return
 
-    # 2. Verify account info and login status
+    # 3. Verify account info and login status
     acc_info = mt5.account_info()
     if acc_info:
         log.info(f"SUCCESSFULLY LOGGED IN! Account Name: {getattr(acc_info, 'name', 'N/A')}, Balance: {getattr(acc_info, 'balance', 'N/A')}, Server: {getattr(acc_info, 'server', 'N/A')}")
