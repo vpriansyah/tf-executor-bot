@@ -136,11 +136,11 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 10
     wget -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O mt5setup.exe || true
 
     if [ -s finex5setup.exe ]; then
-        echo "[SETUP] Menjalankan installer Finex MT5..."
-        DISPLAY=:99 wine finex5setup.exe /auto /path:"C:\Program Files\MetaTrader 5" &
+        echo "[SETUP] Menjalankan installer Finex MT5 secara silent (/S /auto)..."
+        DISPLAY=:99 wine finex5setup.exe /S /auto /D=C:\Program Files\MetaTrader 5 &
     else
-        echo "[SETUP] Menjalankan installer MetaTrader 5..."
-        DISPLAY=:99 wine mt5setup.exe /auto /path:"C:\Program Files\MetaTrader 5" &
+        echo "[SETUP] Menjalankan installer MetaTrader 5 secara silent (/S /auto)..."
+        DISPLAY=:99 wine mt5setup.exe /S /auto /D=C:\Program Files\MetaTrader 5 &
     fi
 
     # Menunggu & mengirimkan input tombol Next (Alt+N) & Return ke GUI installer mt5setup di DISPLAY :99
