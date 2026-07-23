@@ -245,7 +245,6 @@ if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ] && [ $(stat -c%s "$FOUND_EXE" 2>/d
         for i in {1..15}; do
             sleep 3
             DISPLAY=:99 xdotool key Escape 2>/dev/null || true
-            DISPLAY=:99 xdotool key Return 2>/dev/null || true
         done
     ) &
 
