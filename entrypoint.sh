@@ -194,12 +194,16 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
             echo "[SETUP #$COUNTER/90] Menunggu installer MT5 mengekstrak biner ke C:\Program Files\MetaTrader 5..."
         fi
 
-        # Hanya kirimkan tombol ke jendela GUI MetaTrader jika jendela wizard terdeteksi aktif
+        # Kirimkan Space (centang lisensi), Alt+N (Next), & Return untuk memicu instalasi
         WID=$(DISPLAY=:99 xdotool search --name "MetaTrader" 2>/dev/null | head -n 1 || true)
         if [ -n "$WID" ]; then
             DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
             DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
             DISPLAY=:99 xdotool key --window "$WID" Return 2>/dev/null || true
+        else
+            DISPLAY=:99 xdotool key space 2>/dev/null || true
+            DISPLAY=:99 xdotool key alt+n 2>/dev/null || true
+            DISPLAY=:99 xdotool key Return 2>/dev/null || true
         fi
     done
     cd /app
