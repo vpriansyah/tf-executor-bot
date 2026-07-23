@@ -126,9 +126,16 @@ if [ ! -f "$MT5_EXE" ]; then
             sleep 3
             break
         fi
-        DISPLAY=:99 xdotool key alt+n 2>/dev/null || true
-        DISPLAY=:99 xdotool key Return 2>/dev/null || true
-        DISPLAY=:99 xdotool key space 2>/dev/null || true
+        WID=$(DISPLAY=:99 xdotool search --name "MetaTrader" 2>/dev/null | head -n 1)
+        if [ -n "$WID" ]; then
+            DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
+            DISPLAY=:99 xdotool key --window "$WID" Return 2>/dev/null || true
+            DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
+        else
+            DISPLAY=:99 xdotool key alt+n 2>/dev/null || true
+            DISPLAY=:99 xdotool key Return 2>/dev/null || true
+            DISPLAY=:99 xdotool key space 2>/dev/null || true
+        fi
     done
     cd /app
 fi

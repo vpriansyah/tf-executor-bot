@@ -54,12 +54,11 @@ def connect_mt5_in_background():
                 init_ok = mt5.initialize()
 
             if not init_ok and attempt == 3:
-                log.info("Attempting to launch terminal64.exe process directly...")
+                log.info("Attempting to launch terminal64.exe process directly via Wine start...")
                 try:
-                    import subprocess
-                    subprocess.Popen([mt5_path])
+                    os.system(r'start "" "C:\Program Files\MetaTrader 5\terminal64.exe"')
                 except Exception as ex:
-                    log.warning(f"Direct Popen error: {ex}")
+                    log.warning(f"Direct start error: {ex}")
 
             if init_ok:
                 log.info(f"MT5 terminal IPC initialized successfully on attempt #{attempt}!")
