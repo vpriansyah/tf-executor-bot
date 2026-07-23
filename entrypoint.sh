@@ -237,7 +237,16 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
     cd /app
 fi
 
-FOUND_EXE=$(find "$WINEPREFIX/drive_c" \( -iname "terminal64.exe" -o -iname "terminal.exe" \) 2>/dev/null | head -n 1 || true)
+FOUND_EXE=""
+for p in "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe" "$WINEPREFIX/drive_c/MetaTrader5/terminal64.exe"; do
+    if [ -f "$p" ] && [ $(stat -c%s "$p" 2>/dev/null || echo 0) -gt 5000000 ]; then
+        FOUND_EXE="$p"
+        break
+    fi
+done
+if [ -z "$FOUND_EXE" ]; then
+    FOUND_EXE=$(find "$WINEPREFIX/drive_c" \( -iname "terminal64.exe" -o -iname "terminal.exe" \) 2>/dev/null | head -n 1 || true)
+fi
 if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ] && [ $(stat -c%s "$FOUND_EXE" 2>/dev/null || echo 0) -gt 5000000 ]; then
     MT5_EXE="$FOUND_EXE"
     MT5_DIR=$(dirname "$MT5_EXE")
