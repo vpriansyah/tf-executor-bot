@@ -128,11 +128,10 @@ def connect_mt5_in_background():
 
 
 
-# Start MT5 terminal connection in background thread so port 18812 opens immediately
-bg_thread = threading.Thread(target=connect_mt5_in_background, daemon=True)
-bg_thread.start()
+# 3. Connect MT5 terminal synchronously so MT5 is 100% initialized & logged in before opening port 18812
+connect_mt5_in_background()
 
-# 4. Launch RPyC ThreadedServer di port 18812 dengan timeout 120s
+# 4. Launch RPyC ThreadedServer on port 18812 with 120s sync timeout
 log.info("Launching RPyC SlaveServer on 0.0.0.0:18812...")
 rpyc_server = ThreadedServer(
     SlaveService,
