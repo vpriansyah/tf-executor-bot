@@ -63,12 +63,6 @@ def connect_mt5_in_background():
     init_ok = False
     for attempt in range(1, 15):
         try:
-            if attempt <= 3:
-                try:
-                    os.system(r'Z:\bin\bash -c "DISPLAY=:99 xdotool key Escape 2>/dev/null || true"')
-                except Exception:
-                    pass
-
             init_ok = mt5.initialize()
             if not init_ok:
                 init_ok = mt5.initialize(path=mt5_path)
