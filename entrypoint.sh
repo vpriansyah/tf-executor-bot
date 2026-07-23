@@ -174,11 +174,6 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
         DISPLAY=:99 wine "$SETUP_BIN" /S /auto /D=C:\Program Files\MetaTrader 5 &
     fi
 
-    # Hanya kirimkan tombol Next di awal sekali (detik ke-3) agar wizard berjalan tanpa mengganggu proses unduhan
-    sleep 3
-    DISPLAY=:99 xdotool key alt+n 2>/dev/null || true
-    DISPLAY=:99 xdotool key Return 2>/dev/null || true
-
     echo "[SETUP] Mengunduh & memasang komponen MetaTrader 5 (membutuhkan 1-3 menit)..."
     COUNTER=0
     while [ $COUNTER -lt 90 ]; do
@@ -190,8 +185,7 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
             if [ "$SIZE" -gt 5000000 ]; then
                 MT5_EXE="$FOUND_EXE"
                 echo "[OK] MetaTrader 5 Terminal BERHASIL ter-install ($SIZE bytes) di $MT5_EXE!"
-                DISPLAY=:99 xdotool key Return 2>/dev/null || true
-                sleep 3
+                sleep 2
                 break
             else
                 echo "[SETUP #$COUNTER/90] MT5 sedang mengekstrak biner (ukuran saat ini: $SIZE bytes)..."
