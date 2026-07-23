@@ -110,10 +110,12 @@ if [ ! -f "$MT5_EXE" ]; then
     DISPLAY=:99 wine mt5setup.exe /auto &
 
     # Menunggu & menekan tombol Next/Finish pada installer GUI di DISPLAY :99
-    for i in {1..40}; do
+    echo "[SETUP] Mengunduh & memasang komponen MetaTrader 5 (membutuhkan 1-2 menit)..."
+    for i in {1..60}; do
         sleep 3
         if [ -f "$MT5_EXE" ]; then
-            echo "[OK] MetaTrader 5 Terminal berhasil ter-install!"
+            echo "[OK] MetaTrader 5 Terminal BERHASIL ter-install di $MT5_EXE!"
+            sleep 3
             break
         fi
         DISPLAY=:99 xdotool key Return 2>/dev/null || true
