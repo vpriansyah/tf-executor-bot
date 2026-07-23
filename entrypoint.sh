@@ -212,7 +212,10 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
     while [ $COUNTER -lt 90 ]; do
         COUNTER=$((COUNTER + 1))
         sleep 3
-        FOUND_EXE=$(find "$WINEPREFIX/drive_c" \( -iname "terminal64.exe" -o -iname "terminal.exe" \) 2>/dev/null | head -n 1 || true)
+        FOUND_EXE=$(find "$WINEPREFIX/drive_c" \( -iname "terminal64.exe" -o -iname "terminal.exe" \) -size +5M 2>/dev/null | head -n 1 || true)
+        if [ -z "$FOUND_EXE" ]; then
+            FOUND_EXE=$(find "$WINEPREFIX/drive_c" \( -iname "terminal64.exe" -o -iname "terminal.exe" \) 2>/dev/null | head -n 1 || true)
+        fi
         if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ]; then
             SIZE=$(stat -c%s "$FOUND_EXE" 2>/dev/null || echo 0)
             if [ "$SIZE" -gt 5000000 ]; then
