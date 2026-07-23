@@ -1207,28 +1207,23 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         sym_count = 0
         gold_syms = []
         try:
-            t_raw = client.terminal_info()
-            if t_raw:
-                import rpyc
-                t_info = rpyc.classic.obtain(t_raw)
+            t_info = client.terminal_info()
         except Exception as ex:
             log.warning(f"cmd_status terminal_info exception: {ex}")
+            
         try:
-            a_raw = client.account_info()
-            if a_raw:
-                import rpyc
-                a_info = rpyc.classic.obtain(a_raw)
+            a_info = client.account_info()
         except Exception as ex:
             log.warning(f"cmd_status account_info exception: {ex}")
+            
         try:
             sym_count = client.symbols_total() or 0
             gold_objs = client.symbols_get(group="*XAU*,*GOLD*")
             if gold_objs:
-                import rpyc
-                gold_native = rpyc.classic.obtain(gold_objs)
-                gold_syms = [s.name for s in gold_native]
+                gold_syms = [s.name for s in gold_objs]
         except Exception as ex:
             log.warning(f"cmd_status symbols check exception: {ex}")
+            
         return t_info, a_info, sym_count, gold_syms
 
     try:
