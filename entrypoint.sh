@@ -136,11 +136,11 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
     wget --user-agent="$UA" -q https://download.mql5.com/cdn/web/finex.bisnis.solusi/mt5/finex5setup.exe -O finex5setup.exe || true
     wget --user-agent="$UA" -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O mt5setup.exe || true
 
-    # Ekstraksi Biner MT5 secara langsung menggunakan 7z jika installer terunduh sempurna (>5MB)
+    # Ekstraksi Biner MT5 secara langsung menggunakan 7z jika installer terunduh (>500KB)
     SETUP_BIN=""
-    if [ -s finex5setup.exe ] && [ $(stat -c%s finex5setup.exe || echo 0) -gt 5000000 ]; then
+    if [ -s finex5setup.exe ] && [ $(stat -c%s finex5setup.exe || echo 0) -gt 500000 ]; then
         SETUP_BIN="finex5setup.exe"
-    elif [ -s mt5setup.exe ] && [ $(stat -c%s mt5setup.exe || echo 0) -gt 5000000 ]; then
+    elif [ -s mt5setup.exe ] && [ $(stat -c%s mt5setup.exe || echo 0) -gt 500000 ]; then
         SETUP_BIN="mt5setup.exe"
     fi
 
