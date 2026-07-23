@@ -145,13 +145,20 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 10
     fi
 
     if [ -n "$SETUP_BIN" ]; then
-        echo "[SETUP] Meng-ekstrak biner MT5 (18.3MB) secara langsung dari $SETUP_BIN menggunakan 7z..."
+        echo "[SETUP] Meng-ekstrak biner MT5 (2-stage 7z unpack) dari $SETUP_BIN..."
         mkdir -p "$WINEPREFIX/drive_c/Program Files/MetaTrader 5"
-        7z x -y "$SETUP_BIN" -o/tmp/mt5-unpacked >/dev/null 2>&1 || true
-        UNPACKED_EXE=$(find /tmp/mt5-unpacked -size +10M 2>/dev/null | head -n 1 || true)
-        if [ -n "$UNPACKED_EXE" ] && [ -f "$UNPACKED_EXE" ]; then
-            cp -f "$UNPACKED_EXE" "$WINEPREFIX/drive_c/Program Files/MetaTrader 5/terminal64.exe"
-            echo "[OK] Berhasil mengekstrak terminal64.exe (18.3 MB) ke C:\\Program Files\\MetaTrader 5!"
+        rm -rf /tmp/mt5-step1 /tmp/mt5-step2
+        7z x -y "$SETUP_BIN" -o/tmp/mt5-step1 >/dev/null 2>&1 || true
+        SUB_ARCH=$(find /tmp/mt5-step1 -name "[0]" -o -name "*.cab" -o -size +10M 2>/dev/null | head -n 1 || true)
+        if [ -n "$SUB_ARCH" ]; then
+            echo "[SETUP] Unpacking biner utama dari sub-arsip $SUB_ARCH..."
+            7z x -y "$SUB_ARCH" -o"$WINEPREFIX/drive_c/Program Files/MetaTrader 5/" >/dev/null 2>&1 || true
+        fi
+        
+        FOUND_REAL=$(find "$WINEPREFIX/drive_c/Program Files/MetaTrader 5" \( -iname "terminal64.exe" -o -iname "terminal.exe" \) 2>/dev/null | head -n 1 || true)
+        if [ -n "$FOUND_REAL" ] && [ -f "$FOUND_REAL" ]; then
+            SIZE=$(stat -c%s "$FOUND_REAL" 2>/dev/null || echo 0)
+            echo "[OK] Berhasil mengekstrak terminal64.exe PE32+ ($SIZE bytes) ke C:\\Program Files\\MetaTrader 5!"
         fi
     fi
 
