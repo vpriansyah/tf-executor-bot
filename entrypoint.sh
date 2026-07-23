@@ -250,7 +250,9 @@ if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ] && [ $(stat -c%s "$FOUND_EXE" 2>/d
         DISPLAY=:99 wine "$EXE_NAME" &
     fi
     cd /app
-    sleep 3
+    sleep 2
+    DISPLAY=:99 xdotool key Escape 2>/dev/null || true
+    sleep 1
 else
     echo "⚠️ WARNING: MT5 Terminal ($MT5_EXE) belum terinstall dengan sempurna (file belum lengkap)."
 fi
