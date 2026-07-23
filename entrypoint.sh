@@ -186,17 +186,22 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
             fi
 
             if [ -n "$WID" ]; then
-                echo "[SETUP] Jendela MetaTrader terdeteksi (WID: $WID). Mengirim sekuens pencentangan lisensi (Tab + Space + Tab + Alt+N + Return)..."
-                for step in 1 2; do
+                echo "[SETUP] Jendela MetaTrader terdeteksi (WID: $WID). Mengaktifkan fokus jendela..."
+                DISPLAY=:99 xdotool windowactivate --sync "$WID" 2>/dev/null || true
+                DISPLAY=:99 xdotool windowfocus --sync "$WID" 2>/dev/null || true
+                sleep 1
+
+                echo "[SETUP] Mengirim sekuens pencentangan lisensi (Tab + Space + Tab + Return/Alt+N)..."
+                for step in 1 2 3; do
                     DISPLAY=:99 xdotool key --window "$WID" Tab 2>/dev/null || true
-                    sleep 0.5
+                    sleep 0.3
                     DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
-                    sleep 0.5
+                    sleep 0.3
                     DISPLAY=:99 xdotool key --window "$WID" Tab 2>/dev/null || true
-                    sleep 0.5
-                    DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
-                    sleep 0.5
+                    sleep 0.3
                     DISPLAY=:99 xdotool key --window "$WID" Return 2>/dev/null || true
+                    sleep 0.3
+                    DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
                     sleep 1
                 done
                 break
