@@ -197,8 +197,12 @@ fi
 FOUND_EXE=$(find "$WINEPREFIX/drive_c" \( -iname "terminal64.exe" -o -iname "terminal.exe" \) 2>/dev/null | head -n 1 || true)
 if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ] && [ $(stat -c%s "$FOUND_EXE" 2>/dev/null || echo 0) -gt 5000000 ]; then
     MT5_EXE="$FOUND_EXE"
-    echo "[OK] Launching MT5 Terminal in Wine: $MT5_EXE (DISPLAY=:99)..."
-    DISPLAY=:99 wine "$MT5_EXE" &
+    MT5_DIR=$(dirname "$MT5_EXE")
+    EXE_NAME=$(basename "$MT5_EXE")
+    echo "[OK] Launching MT5 Terminal in Wine ($MT5_DIR/$EXE_NAME) (DISPLAY=:99)..."
+    cd "$MT5_DIR"
+    DISPLAY=:99 wine "$EXE_NAME" /portable &
+    cd /app
     sleep 5
 else
     echo "⚠️ WARNING: MT5 Terminal ($MT5_EXE) belum terinstall dengan sempurna (file belum lengkap)."
