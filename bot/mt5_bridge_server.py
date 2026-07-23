@@ -66,8 +66,6 @@ def connect_mt5_in_background():
                     break
 
             init_ok = mt5.initialize()
-            if not init_ok:
-                init_ok = mt5.initialize(path=mt5_path)
 
             if init_ok:
                 log.info(f"MT5 terminal IPC initialized successfully on attempt #{attempt}!")
