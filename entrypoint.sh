@@ -173,16 +173,36 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
         echo "[SETUP] Menjalankan Wine setup $SETUP_BIN (/auto /path:\"C:\\Program Files\\MetaTrader 5\")..."
         DISPLAY=:99 wine "$SETUP_BIN" /auto /path:"C:\Program Files\MetaTrader 5" &
         
-        # Kirimkan Space, Alt+N, & Return SEKALI SAJA di detik ke-5 untuk menekan tombol Next >
-        sleep 5
-        WID=$(DISPLAY=:99 xdotool search --name "MetaTrader" 2>/dev/null | head -n 1 || true)
-        if [ -n "$WID" ]; then
-            DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
-            DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
-            DISPLAY=:99 xdotool key --window "$WID" Return 2>/dev/null || true
-        else
+        # Menunggu jendela wizard MetaTrader muncul di screen virtual DISPLAY=:99 (maksimal 30 detik)
+        echo "[SETUP] Menunggu jendela installer MetaTrader muncul di screen..."
+        WID=""
+        WAIT_WIN=0
+        while [ $WAIT_WIN -lt 15 ]; do
+            WAIT_WIN=$((WAIT_WIN + 1))
+            sleep 2
+            WID=$(DISPLAY=:99 xdotool search --name "MetaTrader" 2>/dev/null | head -n 1 || true)
+            if [ -z "$WID" ]; then
+                WID=$(DISPLAY=:99 xdotool search --class "setup" 2>/dev/null | head -n 1 || true)
+            fi
+
+            if [ -n "$WID" ]; then
+                echo "[SETUP] Jendela MetaTrader terdeteksi (WID: $WID). Mengirim tombol Next (Space + Alt+N + Return)..."
+                DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
+                sleep 1
+                DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
+                sleep 1
+                DISPLAY=:99 xdotool key --window "$WID" Return 2>/dev/null || true
+                break
+            fi
+        done
+
+        # Fallback jika WID tidak terdeteksi via search name
+        if [ -z "$WID" ]; then
+            echo "[SETUP] Menjalankan fallback tombol keyboard global ke DISPLAY=:99..."
             DISPLAY=:99 xdotool key space 2>/dev/null || true
+            sleep 1
             DISPLAY=:99 xdotool key alt+n 2>/dev/null || true
+            sleep 1
             DISPLAY=:99 xdotool key Return 2>/dev/null || true
         fi
     fi
