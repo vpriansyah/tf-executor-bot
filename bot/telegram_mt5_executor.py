@@ -1204,24 +1204,28 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         client = get_mt5()
         t_info = None
         a_info = None
-        all_syms = []
+        sym_count = 0
+        gold_syms = []
         try:
             t_info = client.terminal_info()
         except Exception as ex:
-            logger.warning(f"cmd_status terminal_info exception: {ex}")
+            log.warning(f"cmd_status terminal_info exception: {ex}")
         try:
             a_info = client.account_info()
         except Exception as ex:
-            logger.warning(f"cmd_status account_info exception: {ex}")
+            log.warning(f"cmd_status account_info exception: {ex}")
         try:
-            all_syms = get_all_broker_symbols(client)
+            sym_count = client.symbols_total() or 0
+            gold_objs = client.symbols_get(group="*XAU*,*GOLD*")
+            if gold_objs:
+                gold_syms = [s.name for s in gold_objs]
         except Exception as ex:
-            logger.warning(f"cmd_status get_all_broker_symbols exception: {ex}")
-        return t_info, a_info, all_syms
+            log.warning(f"cmd_status symbols check exception: {ex}")
+        return t_info, a_info, sym_count, gold_syms
 
     try:
-        t_info, a_info, all_syms = await asyncio.wait_for(
-            asyncio.to_thread(_sync_check_status), timeout=20
+        t_info, a_info, sym_count, gold_syms = await asyncio.wait_for(
+            asyncio.to_thread(_sync_check_status), timeout=10
         )
 
         lines = ["📊 **STATUS SYSTEM MT5**\n"]
@@ -1242,13 +1246,11 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             lines.append(f"❌ **Broker**: Belum Login (`#{MT5_LOGIN}` @ `{MT5_SERVER}`)")
 
-        sym_count = len(all_syms) if all_syms else 0
-        gold_syms = [s for s in all_syms if 'GOLD' in s.upper() or 'XAU' in s.upper()] if all_syms else []
         gold_str = f" ({', '.join(gold_syms)})" if gold_syms else ""
         lines.append(f"📈 **Market Watch**: {sym_count} Simbol Loaded{gold_str}")
 
     except Exception as e:
-        logger.error(f"cmd_status exception: {e}", exc_info=True)
+        log.error(f"cmd_status exception: {e}", exc_info=True)
         lines = [
             "📊 **STATUS SYSTEM MT5**\n",
             "🟢 **MT5 Terminal**: Active (Process Running)",
