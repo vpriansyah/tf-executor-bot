@@ -3,6 +3,7 @@ import os
 import time
 import logging
 import threading
+import subprocess
 
 # Force unbuffered output in Wine Python stdout/stderr
 if hasattr(sys.stdout, 'reconfigure'):
