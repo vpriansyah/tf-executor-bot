@@ -156,13 +156,13 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
             7z x -y "$SUB_ARCH" -o/tmp/mt5-step2/ >/dev/null 2>&1 || true
         fi
         
-        FOUND_REAL=$(find /tmp/mt5-step1 /tmp/mt5-step2 "$WINEPREFIX/drive_c" \( -iname "terminal64.exe" -o -iname "terminal.exe" \) 2>/dev/null | head -n 1 || true)
+        FOUND_REAL=$(find /tmp/mt5-step1 /tmp/mt5-step2 -type f -size +5M 2>/dev/null | grep -i "terminal" | head -n 1 || true)
         if [ -n "$FOUND_REAL" ] && [ -f "$FOUND_REAL" ]; then
             REAL_DIR=$(dirname "$FOUND_REAL")
-            if [ "$REAL_DIR" != "$TARGET_DIR" ]; then
-                echo "[SETUP] Memindahkan berkas MT5 dari $REAL_DIR ke $TARGET_DIR..."
-                cp -rf "$REAL_DIR"/* "$TARGET_DIR/" 2>/dev/null || true
-            fi
+            echo "[SETUP] Memindahkan berkas MT5 dari $REAL_DIR ke $TARGET_DIR..."
+            cp -rf "$REAL_DIR"/* "$TARGET_DIR/" 2>/dev/null || true
+            mkdir -p "$WINEPREFIX/drive_c/MetaTrader5"
+            cp -rf "$REAL_DIR"/* "$WINEPREFIX/drive_c/MetaTrader5/" 2>/dev/null || true
             MT5_EXE="$TARGET_DIR/terminal64.exe"
             SIZE=$(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0)
             echo "[OK] Berhasil mengekstrak & memindahkan terminal64.exe PE32+ ($SIZE bytes) ke $MT5_EXE!"
