@@ -65,6 +65,13 @@ def connect_mt5_in_background():
                     mt5_path = candidate
                     break
 
+            # Repeatedly send Escape to dismiss blocking wizards that cause IPC timeout
+            if attempt <= 15:
+                try:
+                    os.system(r'Z:\bin\bash -c "DISPLAY=:99 xdotool key Escape 2>/dev/null || true"')
+                except Exception:
+                    pass
+
             init_ok = mt5.initialize()
 
             if init_ok:
