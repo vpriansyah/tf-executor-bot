@@ -126,9 +126,22 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 10
         sleep 3
     fi
 
-    echo "[SETUP] Mengunduh installer MetaTrader 5..."
+    # Pastikan Wine Prefix ter-inisialisasi sempurna sebelum menjalankan installer
+    echo "[SETUP] Menyiapkan environment Wine prefix..."
+    WINEARCH=win64 wineboot -u >/dev/null 2>&1 || true
+    sleep 3
+
+    echo "[SETUP] Mengunduh installer MetaTrader 5 (Finex Broker & MetaQuotes)..."
+    wget -q https://download.mql5.com/cdn/web/finex.bisnis.solusi/mt5/finex5setup.exe -O finex5setup.exe || true
     wget -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe -O mt5setup.exe || true
-    DISPLAY=:99 wine mt5setup.exe /auto /path:"C:\Program Files\MetaTrader 5" &
+
+    if [ -s finex5setup.exe ]; then
+        echo "[SETUP] Menjalankan installer Finex MT5..."
+        DISPLAY=:99 wine finex5setup.exe /auto /path:"C:\Program Files\MetaTrader 5" &
+    else
+        echo "[SETUP] Menjalankan installer MetaTrader 5..."
+        DISPLAY=:99 wine mt5setup.exe /auto /path:"C:\Program Files\MetaTrader 5" &
+    fi
 
     # Menunggu & mengirimkan input tombol Next (Alt+N) & Return ke GUI installer mt5setup di DISPLAY :99
     echo "[SETUP] Mengunduh & memasang komponen MetaTrader 5 (membutuhkan 1-3 menit)..."
