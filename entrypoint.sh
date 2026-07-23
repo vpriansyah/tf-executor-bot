@@ -245,9 +245,9 @@ if [ -n "$FOUND_EXE" ] && [ -f "$FOUND_EXE" ] && [ $(stat -c%s "$FOUND_EXE" 2>/d
     echo "[OK] Launching MT5 Terminal in Wine ($MT5_DIR/$EXE_NAME) (DISPLAY=:99)..."
     cd "$MT5_DIR"
     if [ -n "$MT5_LOGIN" ] && [ "$MT5_LOGIN" != "0" ]; then
-        DISPLAY=:99 wine "$EXE_NAME" /portable /login:"$MT5_LOGIN" /password:"$MT5_PASSWORD" /server:"$MT5_SERVER" &
+        DISPLAY=:99 wine "$EXE_NAME" /login:"$MT5_LOGIN" /password:"$MT5_PASSWORD" /server:"$MT5_SERVER" &
     else
-        DISPLAY=:99 wine "$EXE_NAME" /portable &
+        DISPLAY=:99 wine "$EXE_NAME" &
     fi
     cd /app
     sleep 5
