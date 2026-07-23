@@ -102,30 +102,31 @@ if [ -d "$APPDATA_MQ" ]; then
 fi
 
 echo "[2/4] Checking MetaTrader 5 Terminal in Wine..."
-if [ -f "$MT5_EXE" ]; then
-    echo "[OK] Found MT5 Terminal at $MT5_EXE. Launching MT5 Terminal in Wine (DISPLAY=:99)..."
-    DISPLAY=:99 wine "$MT5_EXE" &
-    sleep 3
-else
-    echo "[INFO] MT5 Terminal belum ada. Mengunduh & install..."
+if [ ! -f "$MT5_EXE" ]; then
+    echo "[INFO] MT5 Terminal belum ada. Mengunduh & menginstall MetaTrader 5..."
     mkdir -p /tmp/mt5-install
     cd /tmp/mt5-install
     wget -q https://download.mql5.com/cdn/web/metaquotes.software.corp/mt5/mt5setup.exe
-    wine mt5setup.exe /auto &
+    DISPLAY=:99 wine mt5setup.exe /auto &
 
-    # Otomatis menekan tombol Next & Finish pada installer GUI di DISPLAY :99
-    (
-        for i in {1..30}; do
-            sleep 3
-            if [ -f "$MT5_EXE" ]; then
-                echo "[OK] MetaTrader 5 Terminal berhasil ter-install!"
-                DISPLAY=:99 wine "$MT5_EXE" &
-                break
-            fi
-            DISPLAY=:99 xdotool key Return 2>/dev/null || true
-        done
-    ) &
+    # Menunggu & menekan tombol Next/Finish pada installer GUI di DISPLAY :99
+    for i in {1..40}; do
+        sleep 3
+        if [ -f "$MT5_EXE" ]; then
+            echo "[OK] MetaTrader 5 Terminal berhasil ter-install!"
+            break
+        fi
+        DISPLAY=:99 xdotool key Return 2>/dev/null || true
+    done
     cd /app
+fi
+
+if [ -f "$MT5_EXE" ]; then
+    echo "[OK] Launching MT5 Terminal in Wine (DISPLAY=:99)..."
+    DISPLAY=:99 wine "$MT5_EXE" &
+    sleep 5
+else
+    echo "⚠️ WARNING: MT5 Terminal ($MT5_EXE) belum terinstall dengan sempurna."
 fi
 
 # 5. Start mt5linux server bridge di Wine

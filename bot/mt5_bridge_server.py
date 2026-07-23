@@ -46,12 +46,20 @@ def connect_mt5_in_background():
     log.info(f"Connecting to MT5 terminal (path='{mt5_path}', login={login_acc}, server='{server_name}')...")
 
     init_ok = False
-    for attempt in range(1, 15):
+    for attempt in range(1, 30):
         try:
             # 1. Initialize IPC connection to MT5 terminal process first
             init_ok = mt5.initialize(path=mt5_path)
             if not init_ok:
                 init_ok = mt5.initialize()
+
+            if not init_ok and attempt == 3:
+                log.info("Attempting to launch terminal64.exe process directly...")
+                try:
+                    import subprocess
+                    subprocess.Popen([mt5_path])
+                except Exception as ex:
+                    log.warning(f"Direct Popen error: {ex}")
 
             if init_ok:
                 log.info(f"MT5 terminal IPC initialized successfully on attempt #{attempt}!")
@@ -64,11 +72,11 @@ def connect_mt5_in_background():
         except Exception as e:
             log.warning(f"Attempt #{attempt} error: {e}")
 
-        log.info(f"Attempt #{attempt}/15 failed (last_error={mt5.last_error()}), retrying in 3s...")
+        log.info(f"Attempt #{attempt}/30 failed (last_error={mt5.last_error()}), retrying in 3s...")
         time.sleep(3)
 
     if not init_ok:
-        log.error("FAILED to initialize MT5 terminal after 15 attempts!")
+        log.error("FAILED to initialize MT5 terminal after 30 attempts!")
         return
 
     # 3. Verify account info and login status
