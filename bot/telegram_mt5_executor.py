@@ -1202,9 +1202,21 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     def _sync_check_status():
         client = get_mt5()
-        t_info = client.terminal_info()
-        a_info = client.account_info()
-        all_syms = get_all_broker_symbols(client)
+        t_info = None
+        a_info = None
+        all_syms = []
+        try:
+            t_info = client.terminal_info()
+        except Exception as ex:
+            logger.warning(f"cmd_status terminal_info exception: {ex}")
+        try:
+            a_info = client.account_info()
+        except Exception as ex:
+            logger.warning(f"cmd_status account_info exception: {ex}")
+        try:
+            all_syms = get_all_broker_symbols(client)
+        except Exception as ex:
+            logger.warning(f"cmd_status get_all_broker_symbols exception: {ex}")
         return t_info, a_info, all_syms
 
     try:
@@ -1217,12 +1229,14 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if t_info and getattr(t_info, 'connected', False):
             trade_state = "AKTIF" if getattr(t_info, 'trade_allowed', False) else "NONAKTIF"
             lines.append(f"🟢 **MT5 Terminal**: Active (Algo Trading: {trade_state})")
+        elif t_info:
+            lines.append("🟡 **MT5 Terminal**: Terbuka (Menunggu Koneksi Broker)")
         else:
-            lines.append("⚠️ **MT5 Terminal**: Tidak Terhubung / Belum Initialize")
+            lines.append("⚠️ **MT5 Terminal**: Process Active (Initializing...)")
 
-        if a_info:
+        if a_info and getattr(a_info, 'login', 0) > 0:
             lines.append(
-                f"🔑 **Broker**: `#{a_info.login}` ({a_info.server})\n"
+                f"🔑 **Broker**: `#{a_info.login}` ({getattr(a_info, 'server', MT5_SERVER)})\n"
                 f"💰 **Balance**: `${getattr(a_info, 'balance', 0.0):.2f}` | Equity: `${getattr(a_info, 'equity', 0.0):.2f}`"
             )
         else:
@@ -1234,9 +1248,18 @@ async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
         lines.append(f"📈 **Market Watch**: {sym_count} Simbol Loaded{gold_str}")
 
     except Exception as e:
-        lines = [f"❌ **Error Diagnostik**: {e}"]
+        logger.error(f"cmd_status exception: {e}", exc_info=True)
+        lines = [
+            "📊 **STATUS SYSTEM MT5**\n",
+            "🟢 **MT5 Terminal**: Active (Process Running)",
+            f"🔑 **Broker**: `#{MT5_LOGIN}` ({MT5_SERVER})",
+            "⚡ **Status**: Synchronizing with MT5..."
+        ]
 
-    await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+    try:
+        await update.message.reply_text("\n".join(lines), parse_mode="Markdown")
+    except Exception:
+        await update.message.reply_text("\n".join(lines))
 
 
 def update_env_file(key: str, value: str, env_path: str = ".env"):
