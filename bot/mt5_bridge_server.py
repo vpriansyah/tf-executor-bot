@@ -106,25 +106,22 @@ def connect_mt5_in_background():
 
 
 
-    # 3. Check and load popular symbols into Market Watch (max 50 to prevent blocking RPyC)
-    symbols = mt5.symbols_get(group="*")
-    if not symbols:
-        symbols = mt5.symbols_get()
-
+    # 3. Check and load key trading symbols (Gold & Major Forex) into Market Watch
+    symbols = mt5.symbols_get()
     if symbols:
         log.info(f"Total symbols available from broker: {len(symbols)}")
         gold_syms = [s.name for s in symbols if 'GOLD' in s.name.upper() or 'XAU' in s.name.upper()]
         log.info(f"Available Gold symbols from broker: {gold_syms}")
 
-        popular_keys = ['XAU', 'GOLD', 'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'USDCHF', 'NZDUSD', 'BTC', 'ETH']
+        # Select Gold & Major Forex symbols without freezing RPyC thread
         selected_count = 0
+        key_keywords = ["XAU", "GOLD", "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", "USDCHF", "BTC"]
         for s in symbols:
-            if any(k in s.name.upper() for k in popular_keys) or selected_count < 30:
+            name_upper = s.name.upper()
+            if any(k in name_upper for k in key_keywords):
                 if mt5.symbol_select(s.name, True):
                     selected_count += 1
-                if selected_count >= 50:
-                    break
-        log.info(f"Successfully selected {selected_count} popular symbols into MT5 Market Watch.")
+        log.info(f"Successfully selected {selected_count} key trading symbols into MT5 Market Watch.")
     else:
         log.warning("No symbols loaded yet from MT5 broker.")
 
@@ -135,14 +132,14 @@ def connect_mt5_in_background():
 bg_thread = threading.Thread(target=connect_mt5_in_background, daemon=True)
 bg_thread.start()
 
-# 4. Launch RPyC ThreadedServer di port 18812 dengan timeout 30s
+# 4. Launch RPyC ThreadedServer di port 18812 dengan timeout 120s
 log.info("Launching RPyC SlaveServer on 0.0.0.0:18812...")
 rpyc_server = ThreadedServer(
     SlaveService,
     hostname="0.0.0.0",
     port=18812,
     reuse_addr=True,
-    protocol_config={"sync_request_timeout": 30, "allow_public_attrs": True}
+    protocol_config={"sync_request_timeout": 120, "allow_public_attrs": True, "allow_all_attrs": True}
 )
 rpyc_server.start()
 
