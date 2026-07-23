@@ -172,39 +172,6 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
     if [ -s "$SETUP_BIN" ]; then
         echo "[SETUP] Menjalankan Wine setup $SETUP_BIN secara silent (/auto /path:C:\\MetaTrader5)..."
         DISPLAY=:99 wine "$SETUP_BIN" /auto /path:C:\MetaTrader5 &
-        
-        # Menunggu jendela wizard MetaTrader jika muncul di screen virtual DISPLAY=:99
-        echo "[SETUP] Menunggu inisialisasi installer MetaTrader..."
-        WID=""
-        WAIT_WIN=0
-        while [ $WAIT_WIN -lt 10 ]; do
-            WAIT_WIN=$((WAIT_WIN + 1))
-            sleep 2
-            WID=$(DISPLAY=:99 xdotool search --name "MetaTrader" 2>/dev/null | head -n 1 || true)
-            if [ -z "$WID" ]; then
-                WID=$(DISPLAY=:99 xdotool search --class "setup" 2>/dev/null | head -n 1 || true)
-            fi
-
-            if [ -n "$WID" ]; then
-                echo "[SETUP] Jendela MetaTrader terdeteksi (WID: $WID). Mengaktifkan fokus jendela & tombol Next..."
-                DISPLAY=:99 xdotool windowactivate --sync "$WID" 2>/dev/null || true
-                DISPLAY=:99 xdotool windowfocus --sync "$WID" 2>/dev/null || true
-                sleep 1
-                for step in 1 2 3; do
-                    DISPLAY=:99 xdotool key --window "$WID" Tab 2>/dev/null || true
-                    sleep 0.3
-                    DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
-                    sleep 0.3
-                    DISPLAY=:99 xdotool key --window "$WID" Tab 2>/dev/null || true
-                    sleep 0.3
-                    DISPLAY=:99 xdotool key --window "$WID" Return 2>/dev/null || true
-                    sleep 0.3
-                    DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
-                    sleep 1
-                done
-                break
-            fi
-        done
     fi
 
     echo "[SETUP] Mengunduh & memasang komponen MetaTrader 5 (membutuhkan 1-3 menit)..."
