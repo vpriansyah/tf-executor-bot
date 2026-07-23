@@ -131,13 +131,13 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
     WINEARCH=win64 wineboot -u >/dev/null 2>&1 || true
     sleep 3
 
-    if [ -f "/app/mt5_app/terminal64.exe" ]; then
-        echo "[SETUP] Menggunakan instalasi MT5 lokal dari /app/mt5_app..."
+    if [ -f "/app/terminal64.zip" ]; then
+        echo "[SETUP] Menggunakan instalasi MT5 lokal dari /app/terminal64.zip..."
         TARGET_DIR="$WINEPREFIX/drive_c/Program Files/MetaTrader 5"
         mkdir -p "$TARGET_DIR"
-        cp -rf /app/mt5_app/* "$TARGET_DIR/" 2>/dev/null || true
+        unzip -q -o /app/terminal64.zip -d "$TARGET_DIR/" 2>/dev/null || true
         MT5_EXE="$TARGET_DIR/terminal64.exe"
-        echo "[OK] Berhasil menyalin MT5 dari /app/mt5_app!"
+        echo "[OK] Berhasil mengekstrak MT5 dari /app/terminal64.zip!"
     else
         echo "[SETUP] Mengunduh installer MetaTrader 5 resmi dengan Desktop User-Agent..."
         UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
