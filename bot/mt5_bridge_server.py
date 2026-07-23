@@ -106,7 +106,7 @@ def connect_mt5_in_background():
 
 
 
-    # 3. Check and load all available symbols into Market Watch
+    # 3. Check and load popular symbols into Market Watch (max 50 to prevent blocking RPyC)
     symbols = mt5.symbols_get(group="*")
     if not symbols:
         symbols = mt5.symbols_get()
@@ -116,11 +116,15 @@ def connect_mt5_in_background():
         gold_syms = [s.name for s in symbols if 'GOLD' in s.name.upper() or 'XAU' in s.name.upper()]
         log.info(f"Available Gold symbols from broker: {gold_syms}")
 
+        popular_keys = ['XAU', 'GOLD', 'EURUSD', 'GBPUSD', 'USDJPY', 'AUDUSD', 'USDCAD', 'USDCHF', 'NZDUSD', 'BTC', 'ETH']
         selected_count = 0
         for s in symbols:
-            if mt5.symbol_select(s.name, True):
-                selected_count += 1
-        log.info(f"Successfully selected {selected_count}/{len(symbols)} symbols into MT5 Market Watch.")
+            if any(k in s.name.upper() for k in popular_keys) or selected_count < 30:
+                if mt5.symbol_select(s.name, True):
+                    selected_count += 1
+                if selected_count >= 50:
+                    break
+        log.info(f"Successfully selected {selected_count} popular symbols into MT5 Market Watch.")
     else:
         log.warning("No symbols loaded yet from MT5 broker.")
 
