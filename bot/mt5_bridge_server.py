@@ -44,19 +44,21 @@ login_acc = int(login_str) if login_str.isdigit() else 0
 def connect_mt5_in_background():
     time.sleep(1)
     # Search for actual terminal64.exe location inside Wine drive_c
-    mt5_path = r"C:\MetaTrader5\terminal64.exe"
-    wine_drive_c = os.environ.get("WINEPREFIX", "/root/.wine") + "/drive_c"
-    for candidate in [r"C:\MetaTrader5\terminal64.exe", r"C:\Program Files\MetaTrader 5\terminal64.exe"]:
+    mt5_path = r"C:\Program Files\MetaTrader 5\terminal64.exe"
+    wine_prefix = os.environ.get("WINEPREFIX", "/root/.wine")
+    wine_drive_c = os.path.join(wine_prefix, "drive_c")
+    for candidate in [r"C:\Program Files\MetaTrader 5\terminal64.exe", r"C:\MetaTrader5\terminal64.exe"]:
         rel_path = candidate[3:].replace("\\", "/")
-        if os.path.exists(os.path.join(wine_drive_c, rel_path)):
+        full_p = os.path.join(wine_drive_c, rel_path)
+        if os.path.isfile(full_p) and os.path.getsize(full_p) > 5000000:
             mt5_path = candidate
             break
 
-    log.info(f"Connecting to MT5 terminal (path='{mt5_path}', login={login_acc}, server='{server_name}')...")
+    mt5_dir = os.path.dirname(mt5_path)
+    log.info(f"Connecting to MT5 terminal (path='{mt5_path}', dir='{mt5_dir}', login={login_acc}, server='{server_name}')...")
 
     # Pastikan terminal64.exe diluncurkan langsung di dalam konteks Wine Python dengan working directory yang benar
     try:
-        mt5_dir = os.path.dirname(mt5_path)
         log.info(f"Spawning MT5 process directly in Wine Python context: dir='{mt5_dir}', exe='{mt5_path}'")
         os.system(f'start /d "{mt5_dir}" terminal64.exe /portable')
         time.sleep(3)
