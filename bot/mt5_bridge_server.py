@@ -53,20 +53,21 @@ def connect_mt5_in_background():
 
     log.info(f"Connecting to MT5 terminal (path='{mt5_path}', login={login_acc}, server='{server_name}')...")
 
+    # Pastikan terminal64.exe diluncurkan langsung di dalam konteks Wine Python
+    try:
+        log.info(f"Spawning MT5 process directly in Wine Python context: {mt5_path}")
+        subprocess.Popen([mt5_path, "/portable"])
+        time.sleep(2)
+    except Exception as ex:
+        log.warning(f"Subprocess spawn warning: {ex}")
+
     init_ok = False
     for attempt in range(1, 30):
         try:
-            # 1. Connect to already running MT5 process first (instant <0.05s)
+            # 1. Connect to running MT5 process
             init_ok = mt5.initialize()
             if not init_ok:
                 init_ok = mt5.initialize(path=mt5_path)
-
-            if not init_ok and attempt == 3:
-                log.info("Attempting to launch terminal64.exe process directly via Wine start...")
-                try:
-                    os.system(f'start "" "{mt5_path}"')
-                except Exception as ex:
-                    log.warning(f"Direct start error: {ex}")
 
             if init_ok:
                 log.info(f"MT5 terminal IPC initialized successfully on attempt #{attempt}!")
