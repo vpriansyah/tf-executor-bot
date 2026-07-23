@@ -60,24 +60,12 @@ def connect_mt5_in_background():
     mt5_dir = os.path.dirname(mt5_path)
     log.info(f"Connecting to MT5 terminal (path='{mt5_path}', dir='{mt5_dir}', login={login_acc}, server='{server_name}')...")
 
-    # Hentikan proses terminal64.exe lama jika ada, lalu jalankan TEPAT 1 instance bersih
-    try:
-        mt5_dir = os.path.dirname(mt5_path)
-        log.info("Terminating any duplicate MT5 terminal processes...")
-        os.system("taskkill /f /im terminal64.exe 2>nul")
-        time.sleep(1)
-        log.info(f"Spawning single MT5 process: dir='{mt5_dir}', exe='{mt5_path}'")
-        os.system(f'cmd /c start "" /d "{mt5_dir}" "{mt5_path}"')
-        time.sleep(4)
-    except Exception as ex:
-        log.warning(f"Process spawn warning: {ex}")
-
     init_ok = False
-    for attempt in range(1, 30):
+    for attempt in range(1, 15):
         try:
-            init_ok = mt5.initialize(path=mt5_path)
+            init_ok = mt5.initialize()
             if not init_ok:
-                init_ok = mt5.initialize()
+                init_ok = mt5.initialize(path=mt5_path)
 
             if init_ok:
                 log.info(f"MT5 terminal IPC initialized successfully on attempt #{attempt}!")
@@ -90,8 +78,8 @@ def connect_mt5_in_background():
         except Exception as e:
             log.warning(f"Attempt #{attempt} error: {e}")
 
-        log.info(f"Attempt #{attempt}/30 failed (last_error={mt5.last_error()}), retrying in 3s...")
-        time.sleep(3)
+        log.info(f"Attempt #{attempt}/15 waiting for MT5 IPC (last_error={mt5.last_error()}), retrying in 2s...")
+        time.sleep(2)
 
     if not init_ok:
         log.error("FAILED to initialize MT5 terminal after 30 attempts!")
