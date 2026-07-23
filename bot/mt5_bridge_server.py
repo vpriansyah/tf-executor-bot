@@ -46,30 +46,32 @@ login_acc = int(login_str) if login_str.isdigit() else 0
 
 def connect_mt5_in_background():
     time.sleep(1)
-    # Search for actual terminal64.exe location inside Wine drive_c
-    mt5_path = r"C:\Program Files\MetaTrader 5\terminal64.exe"
     wine_prefix = os.environ.get("WINEPREFIX", "/root/.wine")
     wine_drive_c = os.path.join(wine_prefix, "drive_c")
-    for candidate in [r"C:\Program Files\MetaTrader 5\terminal64.exe", r"C:\MetaTrader5\terminal64.exe"]:
-        rel_path = candidate[3:].replace("\\", "/")
-        full_p = os.path.join(wine_drive_c, rel_path)
-        if os.path.isfile(full_p) and os.path.getsize(full_p) > 5000000:
-            mt5_path = candidate
-            break
+    mt5_path = r"C:\Program Files\MetaTrader 5\terminal64.exe"
 
-    mt5_dir = os.path.dirname(mt5_path)
-    log.info(f"Connecting to MT5 terminal (path='{mt5_path}', dir='{mt5_dir}', login={login_acc}, server='{server_name}')...")
+    log.info(f"Starting MT5 terminal IPC auto-reconnect thread (login={login_acc}, server='{server_name}')...")
 
     init_ok = False
-    for attempt in range(1, 15):
+    attempt = 0
+    while not init_ok and attempt < 180:
+        attempt += 1
         try:
+            # Dynamically resolve actual terminal64.exe location inside Wine drive_c
+            for candidate in [r"C:\Program Files\MetaTrader 5\terminal64.exe", r"C:\MetaTrader5\terminal64.exe"]:
+                rel_path = candidate[3:].replace("\\", "/")
+                full_p = os.path.join(wine_drive_c, rel_path)
+                if os.path.isfile(full_p) and os.path.getsize(full_p) > 5000000:
+                    mt5_path = candidate
+                    break
+
             init_ok = mt5.initialize()
             if not init_ok:
                 init_ok = mt5.initialize(path=mt5_path)
 
             if init_ok:
                 log.info(f"MT5 terminal IPC initialized successfully on attempt #{attempt}!")
-                # 2. Attempt login if credentials are provided
+                # Attempt login if credentials are provided
                 if login_acc > 0 and password:
                     log.info(f"Logging in to broker account #{login_acc} @ {server_name}...")
                     login_res = mt5.login(login_acc, password=password, server=server_name)
@@ -78,7 +80,8 @@ def connect_mt5_in_background():
         except Exception as e:
             log.warning(f"Attempt #{attempt} error: {e}")
 
-        log.info(f"Attempt #{attempt}/15 waiting for MT5 IPC (last_error={mt5.last_error()}), retrying in 2s...")
+        if attempt % 5 == 0 or attempt == 1:
+            log.info(f"Attempt #{attempt}/180 waiting for MT5 IPC (last_error={mt5.last_error()}), retrying in 2s...")
         time.sleep(2)
 
     if not init_ok:
