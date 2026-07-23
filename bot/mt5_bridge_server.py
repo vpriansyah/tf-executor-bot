@@ -57,11 +57,11 @@ def connect_mt5_in_background():
     mt5_dir = os.path.dirname(mt5_path)
     log.info(f"Connecting to MT5 terminal (path='{mt5_path}', dir='{mt5_dir}', login={login_acc}, server='{server_name}')...")
 
-    # Pastikan terminal64.exe diluncurkan langsung di dalam konteks Wine Python dengan IPC standar
+    # Pastikan terminal64.exe diluncurkan langsung di dalam konteks Wine Python dengan IPC standar & syntax start "" /d
     try:
         mt5_dir = os.path.dirname(mt5_path)
         log.info(f"Spawning MT5 process directly in Wine Python context: dir='{mt5_dir}', exe='{mt5_path}'")
-        os.system(f'start /d "{mt5_dir}" terminal64.exe')
+        os.system(f'start "" /d "{mt5_dir}" "{mt5_path}"')
         time.sleep(3)
     except Exception as ex:
         log.warning(f"Process spawn warning: {ex}")
