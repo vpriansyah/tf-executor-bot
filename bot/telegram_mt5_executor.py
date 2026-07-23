@@ -1386,16 +1386,26 @@ async def cmd_setaccount(update: Update, context: ContextTypes.DEFAULT_TYPE):
     def _sync_relogin():
         client = get_mt5()
         login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
+        if not login_ok:
+            # Fallback re-initialize jika client.login gagal mengganti server
+            mt5_path = r"C:\Program Files\MetaTrader 5\terminal64.exe"
+            try:
+                client.initialize(path=mt5_path, login=MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
+            except Exception:
+                pass
+            login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
+
         a_info = client.account_info()
+        last_err = client.last_error()
         if login_ok and a_info:
             all_syms = get_all_broker_symbols(client)
             if all_syms:
                 for s in all_syms:
                     client.symbol_select(s, True)
-        return login_ok, a_info
+        return login_ok, a_info, last_err
 
     try:
-        login_ok, a_info = await asyncio.to_thread(_sync_relogin)
+        login_ok, a_info, last_err = await asyncio.to_thread(_sync_relogin)
         if login_ok and a_info:
             await status_msg.edit_text(
                 f"✅ **Koneksi Broker & Re-Login BERHASIL!**\n\n"
@@ -1407,9 +1417,16 @@ async def cmd_setaccount(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown"
             )
         else:
+            err_code, err_msg = last_err if isinstance(last_err, (tuple, list)) and len(last_err) >= 2 else ("N/A", str(last_err))
             await status_msg.edit_text(
-                f"⚠️ Login MT5 dikirim, tetapi gagal terhubung ke broker ({MT5_SERVER}).\n"
-                f"Pastikan Login #{MT5_LOGIN}, Password, dan Nama Server benar!"
+                f"⚠️ **Login MT5 Gagal** (Error Code: `{err_code}` — `{err_msg}`)\n\n"
+                f"• Target Login: `#{MT5_LOGIN}`\n"
+                f"• Target Server: `{MT5_SERVER}`\n\n"
+                f"💡 **Penyebab umum:**\n"
+                f"1. Server `{MT5_SERVER}` salah (misal: akun Demo dimasukkan ke server Real).\n"
+                f"2. Password MT5 salah (bukan password login website).\n"
+                f"3. Jika baru ubah `.env`, jalankan `docker compose restart` di VPS.",
+                parse_mode="Markdown"
             )
     except Exception as e:
         await status_msg.edit_text(f"❌ Error saat re-login MT5: {e}")
@@ -1439,11 +1456,19 @@ async def cmd_setserver(update: Update, context: ContextTypes.DEFAULT_TYPE):
     def _sync_relogin_server():
         client = get_mt5()
         login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
+        if not login_ok:
+            mt5_path = r"C:\Program Files\MetaTrader 5\terminal64.exe"
+            try:
+                client.initialize(path=mt5_path, login=MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
+            except Exception:
+                pass
+            login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
         a_info = client.account_info()
-        return login_ok, a_info
+        last_err = client.last_error()
+        return login_ok, a_info, last_err
 
     try:
-        login_ok, a_info = await asyncio.to_thread(_sync_relogin_server)
+        login_ok, a_info, last_err = await asyncio.to_thread(_sync_relogin_server)
         if login_ok and a_info:
             await status_msg.edit_text(
                 f"✅ **Server MT5 Berhasil Diubah ke '{MT5_SERVER}'!**\n"
@@ -1452,7 +1477,12 @@ async def cmd_setserver(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown"
             )
         else:
-            await status_msg.edit_text(f"⚠️ Server diubah ke '{MT5_SERVER}', tetapi MT5 gagal login. Silakan cek credential!")
+            err_code, err_msg = last_err if isinstance(last_err, (tuple, list)) and len(last_err) >= 2 else ("N/A", str(last_err))
+            await status_msg.edit_text(
+                f"⚠️ Server diubah ke '{MT5_SERVER}', tetapi MT5 gagal login (Error: `{err_code}` — `{err_msg}`).\n"
+                f"Silakan cek kredensial & pastikan server benar!",
+                parse_mode="Markdown"
+            )
     except Exception as e:
         await status_msg.edit_text(f"❌ Error saat mengganti server: {e}")
 
@@ -1491,11 +1521,19 @@ async def cmd_setlogin(update: Update, context: ContextTypes.DEFAULT_TYPE):
     def _sync_relogin_acc():
         client = get_mt5()
         login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
+        if not login_ok:
+            mt5_path = r"C:\Program Files\MetaTrader 5\terminal64.exe"
+            try:
+                client.initialize(path=mt5_path, login=MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
+            except Exception:
+                pass
+            login_ok = client.login(MT5_LOGIN, password=MT5_PASSWORD, server=MT5_SERVER)
         a_info = client.account_info()
-        return login_ok, a_info
+        last_err = client.last_error()
+        return login_ok, a_info, last_err
 
     try:
-        login_ok, a_info = await asyncio.to_thread(_sync_relogin_acc)
+        login_ok, a_info, last_err = await asyncio.to_thread(_sync_relogin_acc)
         if login_ok and a_info:
             await status_msg.edit_text(
                 f"✅ **Login & Password MT5 Berhasil Diubah!**\n"
@@ -1505,7 +1543,12 @@ async def cmd_setlogin(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode="Markdown"
             )
         else:
-            await status_msg.edit_text(f"⚠️ Gagal login ke MT5 dengan Login #{MT5_LOGIN}. Silakan cek password & server!")
+            err_code, err_msg = last_err if isinstance(last_err, (tuple, list)) and len(last_err) >= 2 else ("N/A", str(last_err))
+            await status_msg.edit_text(
+                f"⚠️ Gagal login ke MT5 dengan Login #{MT5_LOGIN} (Error: `{err_code}` — `{err_msg}`).\n"
+                f"Silakan cek password & server!",
+                parse_mode="Markdown"
+            )
     except Exception as e:
         await status_msg.edit_text(f"❌ Error saat login: {e}")
 
