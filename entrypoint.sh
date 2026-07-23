@@ -186,23 +186,34 @@ if [ ! -f "$MT5_EXE" ] || [ $(stat -c%s "$MT5_EXE" 2>/dev/null || echo 0) -lt 50
             fi
 
             if [ -n "$WID" ]; then
-                echo "[SETUP] Jendela MetaTrader terdeteksi (WID: $WID). Mengirim tombol Next (Space + Alt+N + Return)..."
-                DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
-                sleep 1
-                DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
-                sleep 1
-                DISPLAY=:99 xdotool key --window "$WID" Return 2>/dev/null || true
+                echo "[SETUP] Jendela MetaTrader terdeteksi (WID: $WID). Mengirim sekuens pencentangan lisensi (Tab + Space + Tab + Alt+N + Return)..."
+                for step in 1 2; do
+                    DISPLAY=:99 xdotool key --window "$WID" Tab 2>/dev/null || true
+                    sleep 0.5
+                    DISPLAY=:99 xdotool key --window "$WID" space 2>/dev/null || true
+                    sleep 0.5
+                    DISPLAY=:99 xdotool key --window "$WID" Tab 2>/dev/null || true
+                    sleep 0.5
+                    DISPLAY=:99 xdotool key --window "$WID" alt+n 2>/dev/null || true
+                    sleep 0.5
+                    DISPLAY=:99 xdotool key --window "$WID" Return 2>/dev/null || true
+                    sleep 1
+                done
                 break
             fi
         done
 
         # Fallback jika WID tidak terdeteksi via search name
         if [ -z "$WID" ]; then
-            echo "[SETUP] Menjalankan fallback tombol keyboard global ke DISPLAY=:99..."
+            echo "[SETUP] Menjalankan fallback sekuens keyboard global ke DISPLAY=:99..."
+            DISPLAY=:99 xdotool key Tab 2>/dev/null || true
+            sleep 0.5
             DISPLAY=:99 xdotool key space 2>/dev/null || true
-            sleep 1
+            sleep 0.5
+            DISPLAY=:99 xdotool key Tab 2>/dev/null || true
+            sleep 0.5
             DISPLAY=:99 xdotool key alt+n 2>/dev/null || true
-            sleep 1
+            sleep 0.5
             DISPLAY=:99 xdotool key Return 2>/dev/null || true
         fi
     fi
