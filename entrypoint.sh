@@ -3,6 +3,7 @@ set -e
 
 export DISPLAY=:99
 export WINEPREFIX=/root/.wine
+export WINEARCH=win64
 export WINEDEBUG=-all
 export WINEDLLOVERRIDES="mscoree,mshtml="
 
