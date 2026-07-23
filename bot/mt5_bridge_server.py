@@ -57,22 +57,24 @@ def connect_mt5_in_background():
     mt5_dir = os.path.dirname(mt5_path)
     log.info(f"Connecting to MT5 terminal (path='{mt5_path}', dir='{mt5_dir}', login={login_acc}, server='{server_name}')...")
 
-    # Pastikan terminal64.exe diluncurkan langsung di dalam konteks Wine Python dengan IPC standar & syntax start "" /d
+    # Hentikan proses terminal64.exe lama jika ada, lalu jalankan TEPAT 1 instance bersih
     try:
         mt5_dir = os.path.dirname(mt5_path)
-        log.info(f"Spawning MT5 process directly in Wine Python context: dir='{mt5_dir}', exe='{mt5_path}'")
+        log.info("Terminating any duplicate MT5 terminal processes...")
+        os.system("taskkill /f /im terminal64.exe 2>nul")
+        time.sleep(1)
+        log.info(f"Spawning single MT5 process: dir='{mt5_dir}', exe='{mt5_path}'")
         os.system(f'start "" /d "{mt5_dir}" "{mt5_path}"')
-        time.sleep(3)
+        time.sleep(4)
     except Exception as ex:
         log.warning(f"Process spawn warning: {ex}")
 
     init_ok = False
     for attempt in range(1, 30):
         try:
-            # 1. Connect to running MT5 process
-            init_ok = mt5.initialize()
+            init_ok = mt5.initialize(path=mt5_path)
             if not init_ok:
-                init_ok = mt5.initialize(path=mt5_path)
+                init_ok = mt5.initialize()
 
             if init_ok:
                 log.info(f"MT5 terminal IPC initialized successfully on attempt #{attempt}!")
